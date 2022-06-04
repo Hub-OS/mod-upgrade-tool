@@ -1,0 +1,12 @@
+{
+  "name": "mod-parsers-wasm",
+  "version": "0.1.0",
+  "files": [
+    "mod_parsers_wasm_bg.wasm",
+    "mod_parsers_wasm.js",
+    "mod_parsers_wasm.d.ts"
+  ],
+  "module": "mod_parsers_wasm.js",
+  "types": "mod_parsers_wasm.d.ts",
+  "sideEffects": false
+}

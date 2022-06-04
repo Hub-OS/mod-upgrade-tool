@@ -1,0 +1,2 @@
+[workspace]
+members = ["ebnf-parser", "mod-parsers-wasm"]
