@@ -4,7 +4,9 @@ use std::collections::HashMap;
 fn ebnf_lexer() -> Lexer<&'static str> {
     let mut lexer = Lexer::new();
 
-    let tokens = ["=", ":=", "::=", "|", "[", "]", "{", "}", "(", ")", ";"];
+    let tokens = [
+        "=", ":=", "::=", "|", "[", "]", "{", "}", "(", ")", ";", "->",
+    ];
 
     for token in tokens {
         lexer.add_token(token, token.to_string());
@@ -83,15 +85,17 @@ fn ebnf_parser() -> EarleyParser<&'static str> {
     // https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form
 
     // derived from the symbol table
-    parser.add_rules("definition", [["::="], [":="], ["="]]);
+    parser.add_rules("definition", [["::="], [":="], ["="], ["->"]]);
     parser.add_rules("optional", [["[", "rhs", "]"]]);
     parser.add_rules("repetition", [["{", "rhs", "}"]]);
     parser.add_rules("group", [["(", "rhs", ")"]]);
     parser.add_rules("alternation", [["rhs", "|", "rhs"]]);
     parser.add_rules("concatination", [["rhs", "rhs"]]);
 
+    parser.add_rules("separator", [vec![";"], vec![]]);
+
     parser.add_rules("grammar", [vec!["rule"], vec!["rule", "grammar"]]);
-    parser.add_rules("rule", [["non_term", "definition", "rhs", ";"]]);
+    parser.add_rules("rule", [["non_term", "definition", "rhs", "separator"]]);
     parser.add_rules(
         "rhs",
         [
