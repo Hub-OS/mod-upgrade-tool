@@ -64,7 +64,7 @@ impl<'parser, 'a, Label: std::fmt::Debug + Copy + Hash + Eq> AsNodeWorkItem<'par
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct CompletedEarleyItem<'parser, Label: Copy> {
     pub rule: &'parser Rule<Label>,
     pub ambiguity: Rc<RefCell<Ambiguity<'parser, Label>>>,
@@ -79,7 +79,7 @@ impl<'parser, Label: std::fmt::Debug + Copy + Hash + Eq> CompletedEarleyItem<'pa
         nullables: &HashMap<Label, &'parser Rule<Label>>,
         tokens: &[Token<'a, Label>],
     ) -> ASTNode<'a, Label> {
-        let mut work_items = vec![AsNodeWorkItem::new(nullables, &self)];
+        let mut work_items = vec![AsNodeWorkItem::new(nullables, self)];
 
         loop {
             let work_item = work_items.last_mut().unwrap();

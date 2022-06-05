@@ -11,9 +11,10 @@ pub struct EarleyRecognizer<'parser, Label: Hash + Copy + Eq> {
     sets: Vec<Vec<EarleyItem<'parser, Label>>>,
     rules: &'parser [Rule<Label>],
     nullables: &'parser HashMap<Label, &'parser Rule<Label>>,
+    ambiguities: Vec<Rc<RefCell<Ambiguity<'parser, Label>>>>,
 }
 
-impl<'parser, Label: std::fmt::Debug + Hash + Copy + Eq> EarleyRecognizer<'parser, Label> {
+impl<'parser, Label: Hash + Copy + Eq> EarleyRecognizer<'parser, Label> {
     pub fn new(
         nullables: &'parser HashMap<Label, &'parser Rule<Label>>,
         rules: &'parser [Rule<Label>],
@@ -22,20 +23,30 @@ impl<'parser, Label: std::fmt::Debug + Hash + Copy + Eq> EarleyRecognizer<'parse
             rules,
             sets: Vec::new(),
             nullables,
+            ambiguities: Vec::new(),
         }
+    }
+
+    fn create_ambiguity(&mut self) -> Rc<RefCell<Ambiguity<'parser, Label>>> {
+        let ambiguity = Rc::new(RefCell::new(Ambiguity::new()));
+        self.ambiguities.push(ambiguity.clone());
+        ambiguity
     }
 
     pub fn recognize<'a>(
         mut self,
         entry: Label,
         tokens: &'parser [Token<'a, Label>],
-    ) -> Vec<Vec<EarleyItem<'parser, Label>>> {
+    ) -> (
+        Vec<Rc<RefCell<Ambiguity<'parser, Label>>>>,
+        Vec<Vec<EarleyItem<'parser, Label>>>,
+    ) {
         let mut first_set = Vec::new();
 
         // initialization
         for rule in self.rules.iter() {
             if rule.label == entry {
-                first_set.push(EarleyItem::new(0, rule));
+                first_set.push(EarleyItem::new(0, rule, self.create_ambiguity()));
             }
         }
 
@@ -67,7 +78,7 @@ impl<'parser, Label: std::fmt::Debug + Hash + Copy + Eq> EarleyRecognizer<'parse
             i += 1
         }
 
-        self.sets
+        (self.ambiguities, self.sets)
     }
 
     fn complete(&mut self, i: usize, j: usize) {
@@ -108,7 +119,8 @@ impl<'parser, Label: std::fmt::Debug + Hash + Copy + Eq> EarleyRecognizer<'parse
                 continue;
             }
 
-            self.append_if_unique(i, EarleyItem::new(i, rule));
+            let ambiguity = self.create_ambiguity();
+            self.append_if_unique(i, EarleyItem::new(i, rule, ambiguity));
         }
 
         // https://loup-vaillant.fr/tutorials/earley-parsing/empty-rules

@@ -56,7 +56,7 @@ impl<Label: std::fmt::Debug + Copy + Eq + Hash> EarleyParser<Label> {
     ) -> Result<ASTNode<'a, Label>, ParserError<'a, Label>> {
         let nullables = super::find_nullables(&self.rules);
         let recognizer = EarleyRecognizer::new(&nullables, &self.rules);
-        let mut sets = recognizer.recognize(self.entry, tokens);
+        let (mut ambiguities, mut sets) = recognizer.recognize(self.entry, tokens);
 
         // handle UnexpectedToken
         if sets.len() - 1 < tokens.len() {
@@ -75,11 +75,18 @@ impl<Label: std::fmt::Debug + Copy + Eq + Hash> EarleyParser<Label> {
             .find(|item| item.start == 0 && item.is_complete() && item.rule.label == self.entry);
 
         if let Some(root_item) = root_item {
-            Ok(root_item.as_completed_item(tokens.len()).as_node(
+            let result = Ok(root_item.as_completed_item(tokens.len()).as_node(
                 &self.hidden_rules,
                 &nullables,
                 tokens,
-            ))
+            ));
+
+            // destroy circular references
+            for ambiguity in &mut ambiguities {
+                ambiguity.borrow_mut().clear_completed_items();
+            }
+
+            result
         } else {
             // root_item did not complete, parsing expected more tokens
             Err(ParserError::UnexpectedEOF)

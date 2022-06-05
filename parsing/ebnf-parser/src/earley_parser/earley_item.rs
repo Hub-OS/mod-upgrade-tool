@@ -11,13 +11,17 @@ pub struct EarleyItem<'parser, Label: Copy> {
     ambiguity: Rc<RefCell<Ambiguity<'parser, Label>>>,
 }
 
-impl<'parser, Label: std::fmt::Debug + Copy + Hash + Eq> EarleyItem<'parser, Label> {
-    pub fn new(start: usize, rule: &'parser Rule<Label>) -> Self {
+impl<'parser, Label: Copy + Hash + Eq> EarleyItem<'parser, Label> {
+    pub fn new(
+        start: usize,
+        rule: &'parser Rule<Label>,
+        ambiguity: Rc<RefCell<Ambiguity<'parser, Label>>>,
+    ) -> Self {
         Self {
             rule,
             next: 0,
             start,
-            ambiguity: Rc::new(RefCell::new(Ambiguity::new())),
+            ambiguity,
         }
     }
 

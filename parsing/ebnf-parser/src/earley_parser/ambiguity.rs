@@ -2,14 +2,13 @@ use crate::{CompletedEarleyItem, Rule};
 use std::collections::HashMap;
 use std::hash::Hash;
 
-#[derive(Debug)]
 pub struct Ambiguity<'parser, Label: Copy> {
     /// the different interpretations of the same branch
     interpretations: Vec<Vec<CompletedEarleyItem<'parser, Label>>>,
     sorted: bool,
 }
 
-impl<'parser, Label: std::fmt::Debug + Copy + Hash + Eq> Ambiguity<'parser, Label> {
+impl<'parser, Label: Copy + Hash + Eq> Ambiguity<'parser, Label> {
     pub fn new() -> Self {
         Self {
             interpretations: Vec::new(),
@@ -28,6 +27,10 @@ impl<'parser, Label: std::fmt::Debug + Copy + Hash + Eq> Ambiguity<'parser, Labe
 
         self.interpretations[rhs_index].push(completed_item);
         self.sorted = false;
+    }
+
+    pub fn clear_completed_items(&mut self) {
+        self.interpretations.clear();
     }
 
     pub fn resolve(
