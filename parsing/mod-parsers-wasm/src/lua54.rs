@@ -128,8 +128,7 @@ impl Lua54Parser {
 
             let end_match = multiline_string_end_regex
                 .find_iter(&source[start..])
-                .filter(|end_match| end_match.end() - end_match.start() == start_match_len)
-                .next();
+                .find(|end_match| end_match.end() - end_match.start() == start_match_len);
 
             if let Some(end_match) = end_match {
                 ("LiteralString", end_match.end())

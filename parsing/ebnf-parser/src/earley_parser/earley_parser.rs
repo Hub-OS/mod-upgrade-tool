@@ -11,13 +11,21 @@ pub struct EarleyParser<Label: Copy + Eq + Hash> {
     hidden_rules: Vec<Label>,
 }
 
-impl<Label: std::fmt::Debug + Copy + Eq + Hash> EarleyParser<Label> {
+impl<Label: Copy + Eq + Hash> EarleyParser<Label> {
     pub fn new(entry: Label) -> Self {
         Self {
             entry,
             rules: Vec::new(),
             hidden_rules: Vec::new(),
         }
+    }
+
+    pub fn entry(&self) -> Label {
+        self.entry
+    }
+
+    pub fn hidden_rules(&self) -> &[Label] {
+        &self.hidden_rules
     }
 
     pub fn add_rule<I>(&mut self, label: Label, rhs: I)
@@ -56,37 +64,18 @@ impl<Label: std::fmt::Debug + Copy + Eq + Hash> EarleyParser<Label> {
     ) -> Result<ASTNode<'a, Label>, ParserError<'a, Label>> {
         let nullables = super::find_nullables(&self.rules);
         let recognizer = EarleyRecognizer::new(&nullables, &self.rules);
-        let (mut ambiguities, mut sets) = recognizer.recognize(self.entry, tokens);
+        let result = recognizer.recognize(self.entry, tokens);
 
         // handle UnexpectedToken
-        if sets.len() - 1 < tokens.len() {
-            let token = tokens[sets.len() - 1];
+        if result.len() - 1 < tokens.len() {
+            let token = tokens[result.len() - 1];
 
             let (line, col) = crate::get_line_and_col(source, token.offset);
             return Err(ParserError::UnexpectedToken { token, line, col });
         }
 
-        let last_set = sets.last_mut().unwrap();
-        last_set.sort_by_key(|item| item.rule.index);
-
-        // find the root_item
-        let root_item = last_set
-            .iter()
-            .find(|item| item.start == 0 && item.is_complete() && item.rule.label == self.entry);
-
-        if let Some(root_item) = root_item {
-            let result = Ok(root_item.as_completed_item(tokens.len()).as_node(
-                &self.hidden_rules,
-                &nullables,
-                tokens,
-            ));
-
-            // destroy circular references
-            for ambiguity in &mut ambiguities {
-                ambiguity.borrow_mut().clear_completed_items();
-            }
-
-            result
+        if let Some(node) = result.into_ast(self, tokens) {
+            Ok(node)
         } else {
             // root_item did not complete, parsing expected more tokens
             Err(ParserError::UnexpectedEOF)

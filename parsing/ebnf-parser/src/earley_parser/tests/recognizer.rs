@@ -36,11 +36,11 @@ fn test() {
     let tokens = lexer().analyze(source).unwrap();
 
     let recognizer = EarleyRecognizer::new(&nullables, &rules);
-    let sets = recognizer.recognize("Sum", &tokens);
+    let result = recognizer.recognize("Sum", &tokens);
 
     let mut output = Vec::new();
 
-    for (index, set) in sets.iter().enumerate() {
+    for (index, set) in result.sets().iter().enumerate() {
         output.push(format!("=== {index} ==="));
 
         for item in set {

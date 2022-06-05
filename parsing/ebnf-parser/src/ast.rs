@@ -11,7 +11,7 @@ pub enum ASTNode<'a, Label: Clone> {
     },
 }
 
-impl<'a, Label: std::fmt::Debug + Copy> ASTNode<'a, Label> {
+impl<'a, Label: Copy> ASTNode<'a, Label> {
     pub fn new_branch(label: Label) -> Self {
         Self::Branch {
             label,

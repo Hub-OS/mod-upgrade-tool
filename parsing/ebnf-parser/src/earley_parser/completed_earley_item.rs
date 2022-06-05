@@ -17,7 +17,7 @@ struct AsNodeWorkItem<'parser, 'a, Label: Copy> {
     symbol_index: usize,
 }
 
-impl<'parser, 'a, Label: std::fmt::Debug + Copy + Hash + Eq> AsNodeWorkItem<'parser, 'a, Label> {
+impl<'parser, 'a, Label: Copy + Hash + Eq> AsNodeWorkItem<'parser, 'a, Label> {
     fn new(
         nullables: &HashMap<Label, &'parser Rule<Label>>,
         item: &CompletedEarleyItem<'parser, Label>,
@@ -72,7 +72,16 @@ pub struct CompletedEarleyItem<'parser, Label: Copy> {
     pub end: usize,
 }
 
-impl<'parser, Label: std::fmt::Debug + Copy + Hash + Eq> CompletedEarleyItem<'parser, Label> {
+impl<'parser, Label: Copy + Hash + Eq> CompletedEarleyItem<'parser, Label> {
+    pub fn new_nullable(rule: &'parser Rule<Label>, start: usize) -> Self {
+        Self {
+            rule,
+            ambiguity: Rc::new(RefCell::new(Ambiguity::new())),
+            start,
+            end: start,
+        }
+    }
+
     pub fn as_node<'a>(
         &self,
         hidden_rules: &[Label],

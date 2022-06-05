@@ -1,16 +1,16 @@
 // https://loup-vaillant.fr/tutorials/earley-parsing/recogniser
 
-use super::EarleyItem;
-use crate::{Ambiguity, CompletedEarleyItem, Rule, Token};
+use super::{Ambiguity, CompletedEarleyItem, EarleyItem, EarleyRecognizerResult};
+use crate::{Rule, Token};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::rc::Rc;
 
 pub struct EarleyRecognizer<'parser, Label: Hash + Copy + Eq> {
-    sets: Vec<Vec<EarleyItem<'parser, Label>>>,
     rules: &'parser [Rule<Label>],
     nullables: &'parser HashMap<Label, &'parser Rule<Label>>,
+    sets: Vec<Vec<EarleyItem<'parser, Label>>>,
     ambiguities: Vec<Rc<RefCell<Ambiguity<'parser, Label>>>>,
 }
 
@@ -21,8 +21,8 @@ impl<'parser, Label: Hash + Copy + Eq> EarleyRecognizer<'parser, Label> {
     ) -> Self {
         Self {
             rules,
-            sets: Vec::new(),
             nullables,
+            sets: Vec::new(),
             ambiguities: Vec::new(),
         }
     }
@@ -37,10 +37,7 @@ impl<'parser, Label: Hash + Copy + Eq> EarleyRecognizer<'parser, Label> {
         mut self,
         entry: Label,
         tokens: &'parser [Token<'a, Label>],
-    ) -> (
-        Vec<Rc<RefCell<Ambiguity<'parser, Label>>>>,
-        Vec<Vec<EarleyItem<'parser, Label>>>,
-    ) {
+    ) -> EarleyRecognizerResult<'parser, Label> {
         let mut first_set = Vec::new();
 
         // initialization
@@ -78,7 +75,7 @@ impl<'parser, Label: Hash + Copy + Eq> EarleyRecognizer<'parser, Label> {
             i += 1
         }
 
-        (self.ambiguities, self.sets)
+        EarleyRecognizerResult::new(self.sets, self.ambiguities, self.nullables)
     }
 
     fn complete(&mut self, i: usize, j: usize) {
@@ -129,13 +126,7 @@ impl<'parser, Label: Hash + Copy + Eq> EarleyRecognizer<'parser, Label> {
             let item = &mut self.sets[i][j];
 
             // create a new item
-            let completed_item = CompletedEarleyItem {
-                rule,
-                ambiguity: Rc::new(RefCell::new(Ambiguity::new())),
-                start: i,
-                end: i,
-            };
-
+            let completed_item = CompletedEarleyItem::new_nullable(rule, i);
             item.add_completed_item(completed_item);
 
             let advanced_item = item.advance();
