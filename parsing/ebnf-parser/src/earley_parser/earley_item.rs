@@ -1,5 +1,6 @@
 use crate::{Ambiguity, CompletedEarleyItem, Rule};
 use std::cell::RefCell;
+use std::hash::Hash;
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -10,7 +11,7 @@ pub struct EarleyItem<'parser, Label: Copy> {
     ambiguity: Rc<RefCell<Ambiguity<'parser, Label>>>,
 }
 
-impl<'parser, Label: std::fmt::Debug + Copy> EarleyItem<'parser, Label> {
+impl<'parser, Label: std::fmt::Debug + Copy + Hash + Eq> EarleyItem<'parser, Label> {
     pub fn new(start: usize, rule: &'parser Rule<Label>) -> Self {
         Self {
             rule,

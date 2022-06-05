@@ -3,6 +3,8 @@
 // Did not work out the big O for this
 
 use std::cell::RefCell;
+use std::collections::HashMap;
+use std::hash::Hash;
 use std::rc::Rc;
 
 use crate::{ASTNode, Ambiguity, Rule, Token};
@@ -15,15 +17,18 @@ struct AsNodeWorkItem<'parser, 'a, Label: Copy> {
     symbol_index: usize,
 }
 
-impl<'parser, 'a, Label: std::fmt::Debug + Copy> AsNodeWorkItem<'parser, 'a, Label> {
-    fn new(item: &CompletedEarleyItem<'parser, Label>) -> Self {
+impl<'parser, 'a, Label: std::fmt::Debug + Copy + Hash + Eq> AsNodeWorkItem<'parser, 'a, Label> {
+    fn new(
+        nullables: &HashMap<Label, &'parser Rule<Label>>,
+        item: &CompletedEarleyItem<'parser, Label>,
+    ) -> Self {
         Self {
             children: Vec::new(),
             rule: item.rule,
             items: item
                 .ambiguity
                 .borrow_mut()
-                .disambiguate(item.rule, item.start, item.end),
+                .resolve(nullables, item.rule, item.start, item.end),
             start: item.start,
             symbol_index: 0,
         }
@@ -67,13 +72,14 @@ pub struct CompletedEarleyItem<'parser, Label: Copy> {
     pub end: usize,
 }
 
-impl<'parser, Label: std::fmt::Debug + Copy + Eq> CompletedEarleyItem<'parser, Label> {
+impl<'parser, Label: std::fmt::Debug + Copy + Hash + Eq> CompletedEarleyItem<'parser, Label> {
     pub fn as_node<'a>(
         &self,
-        tokens: &[Token<'a, Label>],
         hidden_rules: &[Label],
+        nullables: &HashMap<Label, &'parser Rule<Label>>,
+        tokens: &[Token<'a, Label>],
     ) -> ASTNode<'a, Label> {
-        let mut work_items = vec![AsNodeWorkItem::new(&self)];
+        let mut work_items = vec![AsNodeWorkItem::new(nullables, &self)];
 
         loop {
             let work_item = work_items.last_mut().unwrap();
@@ -102,7 +108,7 @@ impl<'parser, Label: std::fmt::Debug + Copy + Eq> CompletedEarleyItem<'parser, L
 
             if let Some(completed_item) = &work_item.items[symbol_index] {
                 // rule
-                let new_work_item = AsNodeWorkItem::new(completed_item);
+                let new_work_item = AsNodeWorkItem::new(nullables, completed_item);
                 work_items.push(new_work_item);
             } else {
                 // token

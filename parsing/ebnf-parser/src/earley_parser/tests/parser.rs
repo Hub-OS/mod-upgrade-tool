@@ -229,7 +229,7 @@ fn optional() {
         parser.parse(source, &tokens),
         Ok(ASTNode::Branch {
             label: "start",
-            children: vec![ASTNode::new_leaf(tokens[0]), ASTNode::new_leaf(tokens[1]),]
+            children: vec![ASTNode::new_leaf(tokens[0]), ASTNode::new_leaf(tokens[1])]
         })
     );
 
@@ -240,7 +240,7 @@ fn optional() {
         parser.parse(source, &tokens),
         Ok(ASTNode::Branch {
             label: "start",
-            children: vec![ASTNode::new_leaf(tokens[0]),]
+            children: vec![ASTNode::new_leaf(tokens[0])]
         })
     );
 }
@@ -260,6 +260,7 @@ fn repeating() {
 
     let source = "1 2 3 4 5 -";
     let tokens = lexer.analyze(source).unwrap();
+
     assert_eq!(
         parser.parse(source, &tokens),
         Ok(ASTNode::Branch {
@@ -310,70 +311,122 @@ fn operator_precedence() {
     parser.add_rules(
         "expression",
         [
-            vec!["term"],
-            vec!["term", "+", "expression"],
-            vec!["term", "-", "expression"],
-        ],
-    );
-    parser.add_rules(
-        "term",
-        [
-            vec!["factor"],
-            vec!["factor", "*", "term"],
-            vec!["factor", "/", "term"],
-        ],
-    );
-    parser.add_rules(
-        "factor",
-        [
+            vec!["add_subtract"],
+            vec!["multiply_divide"],
             vec!["number"],
-            vec!["group"],
-            vec!["term", "-", "factor"],
-            vec!["term", "+", "factor"],
         ],
     );
-    parser.add_rules("group", [["(", "expression", ")"]]);
+    parser.add_rules(
+        "add_subtract",
+        [
+            vec!["expression", "+", "expression"],
+            vec!["expression", "-", "expression"],
+        ],
+    );
+    parser.add_rules(
+        "multiply_divide",
+        [
+            vec!["expression", "*", "expression"],
+            vec!["expression", "/", "expression"],
+        ],
+    );
 
-    let source = "2 + (3 + 1) * 4";
+    parser.hide_rule("add_subtract");
+    parser.hide_rule("multiply_divide");
+
+    let source = "2 + 4 * 3";
 
     let tokens = lexer.analyze(source).unwrap();
 
-    // way too big, would like to make sure this is consistent in the future
-    parser.parse(source, &tokens).unwrap();
+    assert_eq!(
+        parser.parse(source, &tokens).unwrap(),
+        ASTNode::Branch {
+            label: "expression",
+            children: vec![
+                ASTNode::Branch {
+                    label: "expression",
+                    children: vec![ASTNode::new_leaf(tokens[0])], // 2
+                },
+                ASTNode::new_leaf(tokens[1]), // +
+                ASTNode::Branch {
+                    label: "expression",
+                    children: vec![
+                        ASTNode::Branch {
+                            label: "expression",
+                            children: vec![ASTNode::new_leaf(tokens[2])], // 4
+                        },
+                        ASTNode::new_leaf(tokens[3]), // *
+                        ASTNode::Branch {
+                            label: "expression",
+                            children: vec![ASTNode::new_leaf(tokens[4])], // 3
+                        },
+                    ],
+                },
+            ],
+        }
+    );
 }
 
 #[test]
-fn hidden_recursion() {
+fn operator_precedence_reversed() {
     let lexer = create_math_lexer();
 
-    let mut parser = EarleyParser::new("grammar");
-    parser.add_rules("optional", [["*", "rhs", "*"]]);
-    parser.add_rules("repetition", [["+", "rhs", "+"]]);
-    parser.add_rules("group", [["(", "rhs", ")"]]);
-    parser.add_rules("alternation", [["rhs", "/", "rhs"]]);
-    parser.add_rules("concatination", [["rhs", "rhs"]]);
-
-    parser.add_rules("grammar", [vec!["rule"], vec!["rule", "grammar"]]);
-    parser.add_rules("rule", [["number", "=", "rhs", "-"]]);
+    let mut parser = EarleyParser::new("expression");
     parser.add_rules(
-        "rhs",
+        "expression",
         [
-            ["number"],
-            ["term"],
-            ["optional"],
-            ["repetition"],
-            ["group"],
-            ["alternation"],
-            ["concatination"],
+            vec!["multiply_divide"],
+            vec!["add_subtract"],
+            vec!["number"],
+        ],
+    );
+    parser.add_rules(
+        "multiply_divide",
+        [
+            vec!["expression", "*", "expression"],
+            vec!["expression", "/", "expression"],
+        ],
+    );
+    parser.add_rules(
+        "add_subtract",
+        [
+            vec!["expression", "+", "expression"],
+            vec!["expression", "-", "expression"],
         ],
     );
 
-    let source = r#"
-            2 = 2 / 2 2 -
-        "#;
+    parser.hide_rule("add_subtract");
+    parser.hide_rule("multiply_divide");
+
+    let source = "2 + 4 * 3";
 
     let tokens = lexer.analyze(source).unwrap();
 
-    // way too big, would like to make sure this is consistent in the future
-    parser.parse(source, &tokens).unwrap();
+    assert_eq!(
+        parser.parse(source, &tokens).unwrap(),
+        ASTNode::Branch {
+            label: "expression",
+            children: vec![
+                ASTNode::Branch {
+                    label: "expression",
+                    children: vec![
+                        ASTNode::Branch {
+                            label: "expression",
+                            children: vec![ASTNode::new_leaf(tokens[0])], // 2
+                        },
+                        ASTNode::new_leaf(tokens[1]), // +
+                        ASTNode::Branch {
+                            label: "expression",
+                            children: vec![ASTNode::new_leaf(tokens[2])], // 4
+                        },
+                    ],
+                },
+                ASTNode::new_leaf(tokens[3]), // *
+                ASTNode::Branch {
+                    label: "expression",
+                    children: vec![ASTNode::new_leaf(tokens[4])], // 3
+                },
+            ],
+        }
+    );
 }

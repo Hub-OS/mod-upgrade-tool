@@ -21,20 +21,21 @@ fn test() {
 
     let source = "1+(2*3-4)";
 
-    // rules are reversed from loup's as we process them reversed internally
     let rules = vec![
-        Rule::new(0, "Number", vec!["[0-9]"]),
-        Rule::new(1, "Number", vec!["[0-9]", "Number"]),
-        Rule::new(2, "Factor", vec!["Number"]),
-        Rule::new(3, "Factor", vec!["(", "Sum", ")"]),
-        Rule::new(4, "Product", vec!["Factor"]),
-        Rule::new(5, "Product", vec!["Product", "[*/]", "Factor"]),
-        Rule::new(6, "Sum", vec!["Product"]),
-        Rule::new(7, "Sum", vec!["Sum", "[+-]", "Product"]),
+        Rule::new(0, "Sum", vec!["Sum", "[+-]", "Product"]),
+        Rule::new(1, "Sum", vec!["Product"]),
+        Rule::new(2, "Product", vec!["Product", "[*/]", "Factor"]),
+        Rule::new(3, "Product", vec!["Factor"]),
+        Rule::new(4, "Factor", vec!["(", "Sum", ")"]),
+        Rule::new(5, "Factor", vec!["Number"]),
+        Rule::new(6, "Number", vec!["[0-9]", "Number"]),
+        Rule::new(7, "Number", vec!["[0-9]"]),
     ];
 
+    let nullables = crate::find_nullables(&rules);
+    let recognizer = EarleyRecognizer::new(&nullables, &rules);
+
     let tokens = lexer().analyze(source).unwrap();
-    let recognizer = EarleyRecognizer::new(&rules);
     let sets = recognizer.recognize("Sum", &tokens);
 
     let mut output = Vec::new();

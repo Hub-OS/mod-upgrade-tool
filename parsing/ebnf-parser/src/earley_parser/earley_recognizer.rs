@@ -10,82 +10,19 @@ use std::rc::Rc;
 pub struct EarleyRecognizer<'parser, Label: Hash + Copy + Eq> {
     sets: Vec<Vec<EarleyItem<'parser, Label>>>,
     rules: &'parser [Rule<Label>],
-    nullables: HashMap<Label, &'parser Rule<Label>>,
+    nullables: &'parser HashMap<Label, &'parser Rule<Label>>,
 }
 
 impl<'parser, Label: std::fmt::Debug + Hash + Copy + Eq> EarleyRecognizer<'parser, Label> {
-    pub fn new(rules: &'parser [Rule<Label>]) -> Self {
+    pub fn new(
+        nullables: &'parser HashMap<Label, &'parser Rule<Label>>,
+        rules: &'parser [Rule<Label>],
+    ) -> Self {
         Self {
             rules,
             sets: Vec::new(),
-            nullables: EarleyRecognizer::find_nullables(rules),
+            nullables,
         }
-    }
-
-    fn find_nullables(rules: &'parser [Rule<Label>]) -> HashMap<Label, &'parser Rule<Label>> {
-        // todo: cache?
-        // https://github.com/jeffreykegler/kollos/blob/master/notes/misc/loup2.md
-        // modified to include rule index
-
-        let mut rules_by_rhs: HashMap<Label, Vec<&Rule<Label>>> = HashMap::new();
-
-        let mut nullables = HashMap::new();
-        let mut work_stack = Vec::new();
-
-        for rule in rules.iter() {
-            if rule.rhs.is_empty() {
-                if !work_stack.contains(&rule.label) {
-                    nullables.insert(rule.label, rule);
-                    work_stack.push(rule.label);
-                }
-
-                continue;
-            }
-
-            for rhs in &rule.rhs {
-                if let Some(list) = rules_by_rhs.get_mut(rhs) {
-                    list.push(rule);
-                } else {
-                    rules_by_rhs.insert(*rhs, vec![rule]);
-                }
-            }
-        }
-
-        // find every rule using our found nullables
-        // and resolve if they're nullable
-        while !work_stack.is_empty() {
-            let work_symbol = work_stack.pop().unwrap();
-
-            let rules = if let Some(rules) = rules_by_rhs.get(&work_symbol) {
-                rules
-            } else {
-                continue;
-            };
-
-            'rule_loop: for work_rule in rules {
-                if nullables.contains_key(&work_rule.label) {
-                    // already marked as nullable
-                    continue;
-                }
-
-                // every rule on the rhs must be nullable
-                for label in &work_rule.rhs {
-                    if !nullables.contains_key(label) {
-                        continue 'rule_loop;
-                    }
-                }
-
-                // every rule on the rhs is nullable
-                // so this rule is nullable
-                nullables.insert(work_rule.label, work_rule);
-
-                // add to the work stack to see if finding this nullable
-                // changes the status of other rules
-                work_stack.push(work_rule.label);
-            }
-        }
-
-        nullables
     }
 
     pub fn recognize<'a>(
@@ -96,8 +33,7 @@ impl<'parser, Label: std::fmt::Debug + Hash + Copy + Eq> EarleyRecognizer<'parse
         let mut first_set = Vec::new();
 
         // initialization
-        // iterating in reverse to avoid sorting later
-        for rule in self.rules.iter().rev() {
+        for rule in self.rules.iter() {
             if rule.label == entry {
                 first_set.push(EarleyItem::new(0, rule));
             }
@@ -167,8 +103,7 @@ impl<'parser, Label: std::fmt::Debug + Hash + Copy + Eq> EarleyRecognizer<'parse
     }
 
     fn predict(&mut self, i: usize, j: usize, label: Label) {
-        // iterating in reverse to avoid sorting later
-        for rule in self.rules.iter().rev() {
+        for rule in self.rules.iter() {
             if rule.label != label {
                 continue;
             }
