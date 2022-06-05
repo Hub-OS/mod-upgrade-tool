@@ -33,9 +33,9 @@ fn test() {
     ];
 
     let nullables = crate::find_nullables(&rules);
-    let recognizer = EarleyRecognizer::new(&nullables, &rules);
-
     let tokens = lexer().analyze(source).unwrap();
+
+    let recognizer = EarleyRecognizer::new(&nullables, &rules);
     let sets = recognizer.recognize("Sum", &tokens);
 
     let mut output = Vec::new();
