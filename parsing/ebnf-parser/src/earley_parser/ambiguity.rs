@@ -36,6 +36,7 @@ impl<'parser, Label: Copy + Hash + Eq> Ambiguity<'parser, Label> {
     pub fn resolve(
         &mut self,
         nullables: &HashMap<Label, &'parser Rule<Label>>,
+        visited_items: &[CompletedEarleyItem<'parser, Label>],
         rule: &Rule<Label>,
         start: usize,
         end: usize,
@@ -122,11 +123,11 @@ impl<'parser, Label: Copy + Hash + Eq> Ambiguity<'parser, Label> {
 
             let completed_item = &symbol_interpretations[work_item.index];
 
-            if work_item.start != completed_item.start
-                || (is_last_item && completed_item.end != end)
-            {
-                // item does not follow the previous rule
-                // or it doesn't end where we expect it to
+            let acceptable_start = work_item.start == completed_item.start;
+            let acceptable_end = !is_last_item || completed_item.end == end;
+            let acceptable_item = !visited_items.contains(&completed_item);
+
+            if !acceptable_start || !acceptable_end || !acceptable_item {
                 // try the next interpretation
                 work_list.last_mut().unwrap().index += 1;
                 continue;

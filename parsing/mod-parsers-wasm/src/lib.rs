@@ -1,5 +1,4 @@
 mod ast_to_js;
-mod lua54;
 mod work_tree;
 
 use crate::ast_to_js::ast_to_js_object;
@@ -22,7 +21,7 @@ pub fn hook_panics() {
 
 #[wasm_bindgen]
 pub struct Lua54Parser {
-    parser: lua54::Lua54Parser,
+    parser: lua_parsers::Lua54Parser,
 }
 
 #[wasm_bindgen]
@@ -30,7 +29,7 @@ impl Lua54Parser {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Result<Lua54Parser, JsValue> {
         Ok(Self {
-            parser: lua54::Lua54Parser::new(),
+            parser: lua_parsers::Lua54Parser::new(),
         })
     }
 

@@ -31,7 +31,7 @@ impl Lua54Parser {
             // two expressions in one split with |
             // hexadecimal regex, starts with 0x, [a-f0-9]+ with optional fractional part, and optional binary exponent starting with p
             // decimal regex, starts with [0-9]* and optional fractional part, and optional decimal exponent starting with e
-            r#"^0x(?:[a-f\d]+)(?:\.[a-f\d]*)?(?:p[+-]?\d+)?|^\d*(?:\.\d+(?:e[+-]?\d+)?)?"#,
+            r#"^0x(?:[a-f\d]+)(?:\.[a-f\d]*)?(?:p[+-]?\d+)?|^\d*(?:\.\d+)?(?:e[+-]?\d+)?"#,
         )
         .case_insensitive(true)
         .build()
@@ -228,6 +228,14 @@ mod tests {
     #[test]
     fn multiline_string() {
         let source = "local a = [[multiline\nstring]]";
+
+        let parser = Lua54Parser::new();
+        parser.parse(source).unwrap();
+    }
+
+    #[test]
+    fn confusing_multiline_string() {
+        let source = "local a = [=[multiline\nstring]]=]";
 
         let parser = Lua54Parser::new();
         parser.parse(source).unwrap();

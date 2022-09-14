@@ -21,14 +21,18 @@ impl<'parser, 'a, Label: Copy + Hash + Eq> AsNodeWorkItem<'parser, 'a, Label> {
     fn new(
         nullables: &HashMap<Label, &'parser Rule<Label>>,
         item: &CompletedEarleyItem<'parser, Label>,
+        visited_items: &[CompletedEarleyItem<'parser, Label>],
     ) -> Self {
         Self {
             children: Vec::new(),
             rule: item.rule,
-            items: item
-                .ambiguity
-                .borrow_mut()
-                .resolve(nullables, item.rule, item.start, item.end),
+            items: item.ambiguity.borrow_mut().resolve(
+                nullables,
+                visited_items,
+                item.rule,
+                item.start,
+                item.end,
+            ),
             start: item.start,
             symbol_index: 0,
         }
@@ -88,7 +92,9 @@ impl<'parser, Label: Copy + Hash + Eq> CompletedEarleyItem<'parser, Label> {
         nullables: &HashMap<Label, &'parser Rule<Label>>,
         tokens: &[Token<'a, Label>],
     ) -> ASTNode<'a, Label> {
-        let mut work_items = vec![AsNodeWorkItem::new(nullables, self)];
+        let mut visited_items = Vec::new();
+        let mut work_items = vec![AsNodeWorkItem::new(nullables, self, &visited_items)];
+        visited_items.push(self.clone());
 
         loop {
             let work_item = work_items.last_mut().unwrap();
@@ -97,6 +103,7 @@ impl<'parser, Label: Copy + Hash + Eq> CompletedEarleyItem<'parser, Label> {
             if symbol_index >= work_item.items.len() {
                 // completed the work item
                 let node = work_items.pop().unwrap().into_node();
+                visited_items.pop();
 
                 if let Some(work_item) = work_items.last_mut() {
                     // append children to the last work item
@@ -117,7 +124,10 @@ impl<'parser, Label: Copy + Hash + Eq> CompletedEarleyItem<'parser, Label> {
 
             if let Some(completed_item) = &work_item.items[symbol_index] {
                 // rule
-                let new_work_item = AsNodeWorkItem::new(nullables, completed_item);
+                let new_work_item = AsNodeWorkItem::new(nullables, completed_item, &visited_items);
+
+                visited_items.push(completed_item.clone());
+
                 work_items.push(new_work_item);
             } else {
                 // token
@@ -128,5 +138,11 @@ impl<'parser, Label: Copy + Hash + Eq> CompletedEarleyItem<'parser, Label> {
                 work_item.symbol_index += 1;
             }
         }
+    }
+}
+
+impl<'parser, Label: Copy> PartialEq for CompletedEarleyItem<'parser, Label> {
+    fn eq(&self, other: &Self) -> bool {
+        self.rule == other.rule && self.start == other.start && self.end == other.end
     }
 }

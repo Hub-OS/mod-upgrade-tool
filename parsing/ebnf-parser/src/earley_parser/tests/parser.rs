@@ -214,6 +214,31 @@ fn right_recursion() {
 }
 
 #[test]
+fn left_and_right_recursion() {
+    let lexer = create_math_lexer();
+
+    let mut parser = EarleyParser::new("lr");
+    parser.add_rules("lr", [vec![""], vec!["+"], vec!["lr", "lr"]]);
+    parser.hide_rule("lr");
+
+    let source = "+++";
+
+    let tokens = lexer.analyze(source).unwrap();
+
+    assert_eq!(
+        parser.parse(source, &tokens),
+        Ok(ASTNode::Branch {
+            label: "lr",
+            children: vec![
+                ASTNode::new_leaf(tokens[0]),
+                ASTNode::new_leaf(tokens[1]),
+                ASTNode::new_leaf(tokens[2])
+            ]
+        })
+    )
+}
+
+#[test]
 fn optional() {
     let lexer = create_math_lexer();
 

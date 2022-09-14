@@ -1,2 +1,2 @@
 [workspace]
-members = ["ebnf-parser", "mod-parsers-wasm"]
+members = ["ebnf-parser", "lua-parsers", "mod-parsers-wasm"]
