@@ -76,12 +76,17 @@ export function getArgumentNode(
     throw new Error("not a function");
   }
 
-  const argsNode = function_node.children![function_node.children!.length - 1];
-  const expListNode = argsNode.children![1];
+  const args_node = function_node.children![function_node.children!.length - 1];
+
+  const exp_list_node = args_node.children![1];
+
+  if (!exp_list_node || exp_list_node.type != "explist") {
+    return undefined;
+  }
 
   const argument_node_index = argument_index + argument_index;
 
-  return expListNode!.children![argument_node_index];
+  return exp_list_node!.children![argument_node_index];
 }
 
 /// Lists files
