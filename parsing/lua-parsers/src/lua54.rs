@@ -150,7 +150,7 @@ impl Lua54Parser {
             if source_substr.starts_with("--[[") {
                 source_substr
                     .find("]]")
-                    .map(|index| index + 4)
+                    .map(|index| index + 2)
                     .unwrap_or(source.len() - start)
             } else if source_substr.starts_with("--") {
                 source_substr
