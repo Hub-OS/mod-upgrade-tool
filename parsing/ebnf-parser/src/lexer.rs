@@ -1,4 +1,5 @@
 use crate::error::ParserError;
+use crate::ASTNodeLabel;
 use std::fmt::Debug;
 use std::rc::Rc;
 
@@ -13,13 +14,13 @@ type SubLexer<Label> = Rc<dyn Fn(&str, usize) -> (Label, usize)>;
 type Ignorer = Rc<dyn Fn(&str, usize) -> usize>;
 
 #[derive(Default)]
-pub struct Lexer<Label: Copy + Debug> {
+pub struct Lexer<Label: ASTNodeLabel> {
     tokens: Vec<(Label, String)>,
     lexers: Vec<SubLexer<Label>>,
     ignorers: Vec<Ignorer>,
 }
 
-impl<Label: Copy + Debug> Lexer<Label> {
+impl<Label: ASTNodeLabel> Lexer<Label> {
     pub fn new() -> Self {
         Self {
             tokens: Vec::new(),

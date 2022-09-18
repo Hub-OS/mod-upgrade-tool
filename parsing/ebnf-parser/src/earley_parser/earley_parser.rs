@@ -1,17 +1,16 @@
 // https://loup-vaillant.fr/tutorials/earley-parsing/recogniser
 
 use super::EarleyRecognizer;
-use crate::{ASTNode, ParserError, Rule, Token};
-use std::hash::Hash;
+use crate::{ASTNode, ASTNodeLabel, ParserError, Rule, Token};
 
 #[derive(Default)]
-pub struct EarleyParser<Label: Copy + Eq + Hash> {
+pub struct EarleyParser<Label: ASTNodeLabel> {
     entry: Label,
     rules: Vec<Rule<Label>>,
     hidden_rules: Vec<Label>,
 }
 
-impl<Label: Copy + Eq + Hash> EarleyParser<Label> {
+impl<Label: ASTNodeLabel> EarleyParser<Label> {
     pub fn new(entry: Label) -> Self {
         Self {
             entry,

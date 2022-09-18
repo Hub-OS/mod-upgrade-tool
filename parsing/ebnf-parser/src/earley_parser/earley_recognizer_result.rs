@@ -1,17 +1,16 @@
 use super::{Ambiguity, EarleyItem};
-use crate::{ASTNode, EarleyParser, Rule, Token};
+use crate::{ASTNode, ASTNodeLabel, EarleyParser, Rule, Token};
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::hash::Hash;
 use std::rc::Rc;
 
-pub struct EarleyRecognizerResult<'parser, Label: Copy> {
+pub struct EarleyRecognizerResult<'parser, Label: ASTNodeLabel> {
     sets: Vec<Vec<EarleyItem<'parser, Label>>>,
     ambiguities: Vec<Rc<RefCell<Ambiguity<'parser, Label>>>>,
     nullables: &'parser HashMap<Label, &'parser Rule<Label>>,
 }
 
-impl<'parser, Label: Copy + Hash + Eq> EarleyRecognizerResult<'parser, Label> {
+impl<'parser, Label: ASTNodeLabel> EarleyRecognizerResult<'parser, Label> {
     pub fn new(
         sets: Vec<Vec<EarleyItem<'parser, Label>>>,
         ambiguities: Vec<Rc<RefCell<Ambiguity<'parser, Label>>>>,

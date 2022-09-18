@@ -1,14 +1,13 @@
-use crate::{CompletedEarleyItem, Rule};
+use crate::{ASTNodeLabel, CompletedEarleyItem, Rule};
 use std::collections::HashMap;
-use std::hash::Hash;
 
-pub struct Ambiguity<'parser, Label: Copy> {
+pub struct Ambiguity<'parser, Label: ASTNodeLabel> {
     /// the different interpretations of the same branch
     interpretations: Vec<Vec<CompletedEarleyItem<'parser, Label>>>,
     sorted: bool,
 }
 
-impl<'parser, Label: Copy + Hash + Eq> Ambiguity<'parser, Label> {
+impl<'parser, Label: ASTNodeLabel> Ambiguity<'parser, Label> {
     pub fn new() -> Self {
         Self {
             interpretations: Vec::new(),

@@ -1,10 +1,7 @@
-use crate::Rule;
+use crate::{ASTNodeLabel, Rule};
 use std::collections::HashMap;
-use std::hash::Hash;
 
-pub fn find_nullables<Label: Hash + Copy + Eq>(
-    rules: &[Rule<Label>],
-) -> HashMap<Label, &Rule<Label>> {
+pub fn find_nullables<Label: ASTNodeLabel>(rules: &[Rule<Label>]) -> HashMap<Label, &Rule<Label>> {
     // https://github.com/jeffreykegler/kollos/blob/master/notes/misc/loup2.md
     // modified to include the rule as a value for generating a completed item
 

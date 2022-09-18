@@ -1,7 +1,11 @@
 use crate::Token;
+use std::hash::Hash;
+
+pub trait ASTNodeLabel: Hash + Clone + Copy + PartialEq + Eq {}
+impl<T> ASTNodeLabel for T where T: Hash + Clone + Copy + PartialEq + Eq {}
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub enum ASTNode<'a, Label: Clone> {
+pub enum ASTNode<'a, Label: ASTNodeLabel> {
     Leaf {
         token: Token<'a, Label>,
     },
@@ -11,7 +15,7 @@ pub enum ASTNode<'a, Label: Clone> {
     },
 }
 
-impl<'a, Label: Copy> ASTNode<'a, Label> {
+impl<'a, Label: ASTNodeLabel> ASTNode<'a, Label> {
     pub fn new_branch(label: Label) -> Self {
         Self::Branch {
             label,

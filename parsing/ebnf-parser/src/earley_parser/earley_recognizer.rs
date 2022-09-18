@@ -1,20 +1,19 @@
 // https://loup-vaillant.fr/tutorials/earley-parsing/recogniser
 
 use super::{Ambiguity, CompletedEarleyItem, EarleyItem, EarleyRecognizerResult};
-use crate::{Rule, Token};
+use crate::{ASTNodeLabel, Rule, Token};
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::hash::Hash;
 use std::rc::Rc;
 
-pub struct EarleyRecognizer<'parser, Label: Hash + Copy + Eq> {
+pub struct EarleyRecognizer<'parser, Label: ASTNodeLabel> {
     rules: &'parser [Rule<Label>],
     nullables: &'parser HashMap<Label, &'parser Rule<Label>>,
     sets: Vec<Vec<EarleyItem<'parser, Label>>>,
     ambiguities: Vec<Rc<RefCell<Ambiguity<'parser, Label>>>>,
 }
 
-impl<'parser, Label: Hash + Copy + Eq> EarleyRecognizer<'parser, Label> {
+impl<'parser, Label: ASTNodeLabel> EarleyRecognizer<'parser, Label> {
     pub fn new(
         nullables: &'parser HashMap<Label, &'parser Rule<Label>>,
         rules: &'parser [Rule<Label>],

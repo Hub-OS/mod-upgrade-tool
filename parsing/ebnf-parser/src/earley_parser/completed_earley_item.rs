@@ -4,12 +4,11 @@
 
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::hash::Hash;
 use std::rc::Rc;
 
-use crate::{ASTNode, Ambiguity, Rule, Token};
+use crate::{ASTNode, ASTNodeLabel, Ambiguity, Rule, Token};
 
-struct AsNodeWorkItem<'parser, 'a, Label: Copy> {
+struct AsNodeWorkItem<'parser, 'a, Label: ASTNodeLabel> {
     children: Vec<ASTNode<'a, Label>>,
     rule: &'parser Rule<Label>,
     items: Vec<Option<CompletedEarleyItem<'parser, Label>>>,
@@ -17,7 +16,7 @@ struct AsNodeWorkItem<'parser, 'a, Label: Copy> {
     symbol_index: usize,
 }
 
-impl<'parser, 'a, Label: Copy + Hash + Eq> AsNodeWorkItem<'parser, 'a, Label> {
+impl<'parser, 'a, Label: ASTNodeLabel> AsNodeWorkItem<'parser, 'a, Label> {
     fn new(
         nullables: &HashMap<Label, &'parser Rule<Label>>,
         item: &CompletedEarleyItem<'parser, Label>,
@@ -69,14 +68,14 @@ impl<'parser, 'a, Label: Copy + Hash + Eq> AsNodeWorkItem<'parser, 'a, Label> {
 }
 
 #[derive(Clone)]
-pub struct CompletedEarleyItem<'parser, Label: Copy> {
+pub struct CompletedEarleyItem<'parser, Label: ASTNodeLabel> {
     pub rule: &'parser Rule<Label>,
     pub ambiguity: Rc<RefCell<Ambiguity<'parser, Label>>>,
     pub start: usize,
     pub end: usize,
 }
 
-impl<'parser, Label: Copy + Hash + Eq> CompletedEarleyItem<'parser, Label> {
+impl<'parser, Label: ASTNodeLabel> CompletedEarleyItem<'parser, Label> {
     pub fn new_nullable(rule: &'parser Rule<Label>, start: usize) -> Self {
         Self {
             rule,
@@ -141,7 +140,7 @@ impl<'parser, Label: Copy + Hash + Eq> CompletedEarleyItem<'parser, Label> {
     }
 }
 
-impl<'parser, Label: Copy> PartialEq for CompletedEarleyItem<'parser, Label> {
+impl<'parser, Label: ASTNodeLabel> PartialEq for CompletedEarleyItem<'parser, Label> {
     fn eq(&self, other: &Self) -> bool {
         self.rule == other.rule && self.start == other.start && self.end == other.end
     }

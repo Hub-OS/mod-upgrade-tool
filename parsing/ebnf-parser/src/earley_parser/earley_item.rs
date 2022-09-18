@@ -1,17 +1,16 @@
-use crate::{Ambiguity, CompletedEarleyItem, Rule};
+use crate::{ASTNodeLabel, Ambiguity, CompletedEarleyItem, Rule};
 use std::cell::RefCell;
-use std::hash::Hash;
 use std::rc::Rc;
 
 #[derive(Clone)]
-pub struct EarleyItem<'parser, Label: Copy> {
+pub struct EarleyItem<'parser, Label: ASTNodeLabel> {
     pub rule: &'parser Rule<Label>,
     pub next: usize,
     pub start: usize,
     ambiguity: Rc<RefCell<Ambiguity<'parser, Label>>>,
 }
 
-impl<'parser, Label: Copy + Hash + Eq> EarleyItem<'parser, Label> {
+impl<'parser, Label: ASTNodeLabel> EarleyItem<'parser, Label> {
     pub fn new(
         start: usize,
         rule: &'parser Rule<Label>,
@@ -55,13 +54,15 @@ impl<'parser, Label: Copy + Hash + Eq> EarleyItem<'parser, Label> {
     }
 }
 
-impl<'parser, Label: Copy> PartialEq for EarleyItem<'parser, Label> {
+impl<'parser, Label: ASTNodeLabel> PartialEq for EarleyItem<'parser, Label> {
     fn eq(&self, other: &Self) -> bool {
         self.rule.index == other.rule.index && self.start == other.start && self.next == other.next
     }
 }
 
-impl<'parser, Label: std::fmt::Debug + Copy> std::fmt::Debug for EarleyItem<'parser, Label> {
+impl<'parser, Label: std::fmt::Debug + ASTNodeLabel> std::fmt::Debug
+    for EarleyItem<'parser, Label>
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}\t->", self.rule.label)?;
 
