@@ -28,6 +28,8 @@ const leafRewrites: { [key: string]: string } = {
   // "Hit.*"
   Pierce: "PierceInvis",
   Breaking: "PierceGuard",
+  // Animation:point() -> Animation:get_point, might rewrite variables named point
+  point: "get_point",
 };
 
 const branchRewrites = [
@@ -59,8 +61,13 @@ export default async function (game_folder: string) {
     }
 
     const patches: Patch[] = [];
+    let contains_frame_data = false;
+    let contains_frame_data_patch = false;
 
     walk(ast, (node) => {
+      contains_frame_data ||= node.content == "make_frame_data";
+      contains_frame_data_patch ||= node.content == "old_make_frame_data";
+
       const leafRewrite = node.content && leafRewrites[node.content];
 
       if (leafRewrite) {
@@ -113,6 +120,24 @@ export default async function (game_folder: string) {
         }
       }
     });
+
+    if (!contains_frame_data_patch && contains_frame_data) {
+      patches.push({
+        start: 0,
+        end: 0,
+        content: `\
+local old_make_frame_data = make_frame_data
+local function make_frame_data(frames)
+  local updated_frames = {}
+  for i, pair in ipairs(frames) do\
+    updated_frames[i] = { pair[1], math.floor(pair[2] * 60 + 0.5) }
+  end
+  return old_make_frame_data(updated_frames)
+end
+
+`,
+      });
+    }
 
     if (patches.length > 0) {
       console.log('Patching "' + path + '"...');
