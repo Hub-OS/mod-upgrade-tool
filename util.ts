@@ -68,6 +68,22 @@ export function collectTokens(node: ASTNode): string[] {
   return tokens;
 }
 
+export function getArgumentNode(
+  function_node: ASTNode,
+  argument_index: number
+): ASTNode | undefined {
+  if (function_node.type != "functioncall") {
+    throw new Error("not a function");
+  }
+
+  const argsNode = function_node.children![function_node.children!.length - 1];
+  const expListNode = argsNode.children![1];
+
+  const argument_node_index = argument_index + argument_index;
+
+  return expListNode!.children![argument_node_index];
+}
+
 /// Lists files
 export async function findFiles(folder: string): Promise<string[]> {
   const file_list = [];

@@ -1,11 +1,13 @@
 import {
   arraysEqual,
   collectTokens,
+  getArgumentNode,
   findFiles,
   parseLua54,
   patch,
   Patch,
   walk,
+  ASTNode,
 } from "../util.ts";
 
 const leafRewrites: { [key: string]: string } = {
@@ -37,7 +39,25 @@ const branchRewrites = [
   { type: "exp", tokens: ["Hit", ".", "Retangible"], content: "0" },
 ];
 
-const createDefenseRuleTokens = ["Battle", ".", "DefenseRule", ".", "new"];
+type ArgumentPatcher = {
+  nameTokens: string[];
+  argumentIndex: number;
+  patchFunction: (node: ASTNode) => string;
+};
+
+const functionArgumentPatches: ArgumentPatcher[] = [
+  {
+    nameTokens: ["Battle", ".", "DefenseRule", ".", "new"],
+    argumentIndex: 0,
+    patchFunction: () => "DefensePriority.Last",
+  },
+  {
+    nameTokens: ["HitProps", ".", "new"],
+    argumentIndex: 3,
+    patchFunction: (node) =>
+      collectTokens(node).join("").replace("get_id", "get_context"),
+  },
+];
 
 export const PREVIOUS_VERSION = "v2";
 export const NEXT_VERSION = "v2.5";
@@ -80,26 +100,29 @@ export default async function (game_folder: string) {
         return;
       }
 
-      if (
-        node.type == "functioncall" &&
-        arraysEqual(collectTokens(node.children[0]), createDefenseRuleTokens)
-      ) {
-        // swapping the first argument with DefensePriority.Last
-        const argsNode = node.children[node.children.length - 1];
-        const expListNode = argsNode.children?.[1];
-        const firstArgNode = expListNode?.children?.[0];
+      if (node.type == "functioncall") {
+        for (const patcher of functionArgumentPatches) {
+          if (
+            !arraysEqual(collectTokens(node.children[0]), patcher.nameTokens)
+          ) {
+            continue;
+          }
 
-        if (firstArgNode) {
+          // swapping the first argument with DefensePriority.Last
+          const argumentNode = getArgumentNode(node, 0);
+
+          if (!argumentNode) {
+            continue;
+          }
+
           patches.push(
             new Patch(
-              firstArgNode.start,
-              firstArgNode.end,
-              "DefensePriority.Last"
+              argumentNode.start,
+              argumentNode.end,
+              patcher.patchFunction(argumentNode)
             )
           );
         }
-
-        return;
       }
 
       const rangeRenames = branchRewrites.filter(
