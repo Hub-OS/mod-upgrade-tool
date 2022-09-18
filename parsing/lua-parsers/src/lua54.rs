@@ -1,4 +1,5 @@
 use ebnf_parser::{ASTNode, EBNFParser, Lexer, ParserError};
+use regex::Regex;
 
 pub struct Lua54Parser {
     lexer: Lexer<&'static str>,
@@ -119,21 +120,17 @@ impl Lua54Parser {
 
         // multiline string
         lexer.add_lexer(move |source, start| {
-            let start_match_len =
-                if let Some(start_match) = multiline_string_start_regex.find(&source[start..]) {
-                    start_match.end() - start_match.start()
-                } else {
-                    return ("LiteralString", 0);
-                };
+            let start_match_len = match multiline_string_start_regex.find(&source[start..]) {
+                Some(start_match) => start_match.end() - start_match.start(),
+                None => return ("LiteralString", 0),
+            };
 
-            let end_match = multiline_string_end_regex
-                .find_iter(&source[start..])
+            let end_match = overlapping_find_iter(&multiline_string_end_regex, &source[start..])
                 .find(|end_match| end_match.end() - end_match.start() == start_match_len);
 
-            if let Some(end_match) = end_match {
-                ("LiteralString", end_match.end())
-            } else {
-                ("LiteralString", 0)
+            match end_match {
+                Some(end_match) => ("LiteralString", end_match.end()),
+                None => ("LiteralString", 0),
             }
         });
 
@@ -178,6 +175,20 @@ impl Lua54Parser {
 
         self.parser.parse(source, &tokens)
     }
+}
+
+fn overlapping_find_iter<'a>(
+    regex: &'a Regex,
+    text: &'a str,
+) -> impl std::iter::Iterator<Item = regex::Match<'a>> {
+    let mut next_start = 0;
+    std::iter::from_fn(move || {
+        let latest_match = regex.find_at(text, next_start)?;
+
+        next_start = latest_match.start() + 1;
+
+        Some(latest_match)
+    })
 }
 
 #[cfg(test)]
