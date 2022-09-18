@@ -121,6 +121,8 @@ impl<'parser, Label: ASTNodeLabel> CompletedEarleyItem<'parser, Label> {
                 }
             }
 
+            let item_label = work_item.rule.rhs[work_item.symbol_index];
+
             if let Some(completed_item) = &work_item.items[symbol_index] {
                 // rule
                 let new_work_item = AsNodeWorkItem::new(nullables, completed_item, &visited_items);
@@ -128,6 +130,13 @@ impl<'parser, Label: ASTNodeLabel> CompletedEarleyItem<'parser, Label> {
                 visited_items.push(completed_item.clone());
 
                 work_items.push(new_work_item);
+            } else if nullables.contains_key(&item_label) {
+                // nullable rule
+                if !hidden_rules.contains(&item_label) {
+                    work_item.children.push(ASTNode::new_branch(item_label));
+                }
+
+                work_item.symbol_index += 1;
             } else {
                 // token
                 work_item

@@ -455,3 +455,51 @@ fn operator_precedence_reversed() {
         }
     );
 }
+
+#[test]
+fn nested_nullable() {
+    let lexer = create_math_lexer();
+
+    let mut parser = EarleyParser::new("chunk");
+    parser.add_rule("chunk", ["block"]);
+    parser.add_rule("block", ["option", "option"]);
+    parser.add_rules("option", [vec!["number"], vec![]]);
+
+    let source = "";
+
+    let tokens = lexer.analyze(source).unwrap();
+
+    assert_eq!(
+        parser.parse(source, &tokens).unwrap(),
+        ASTNode::Branch {
+            label: "chunk",
+            children: vec![ASTNode::Branch {
+                label: "block",
+                children: vec![ASTNode::new_branch("option"), ASTNode::new_branch("option")]
+            }]
+        }
+    );
+}
+
+#[test]
+fn hidden_nested_nullable() {
+    let lexer = create_math_lexer();
+
+    let mut parser = EarleyParser::new("chunk");
+    parser.add_rule("chunk", ["block"]);
+    parser.add_rule("block", ["option", "option"]);
+    parser.add_rules("option", [vec!["number"], vec![]]);
+    parser.hide_rule("option");
+
+    let source = "";
+
+    let tokens = lexer.analyze(source).unwrap();
+
+    assert_eq!(
+        parser.parse(source, &tokens).unwrap(),
+        ASTNode::Branch {
+            label: "chunk",
+            children: vec![ASTNode::new_branch("block")]
+        }
+    );
+}

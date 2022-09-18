@@ -76,7 +76,7 @@ impl<'parser, Label: ASTNodeLabel> Ambiguity<'parser, Label> {
                     let symbol_interpretations = &self.interpretations[rhs_index];
 
                     if symbol_interpretations.is_empty() {
-                        // token
+                        // token or nullable
                         output.push(None);
                     } else {
                         output.push(Some(symbol_interpretations[work_item.index].clone()));
@@ -124,7 +124,7 @@ impl<'parser, Label: ASTNodeLabel> Ambiguity<'parser, Label> {
 
             let acceptable_start = work_item.start == completed_item.start;
             let acceptable_end = !is_last_item || completed_item.end == end;
-            let acceptable_item = !visited_items.contains(&completed_item);
+            let acceptable_item = !visited_items.contains(completed_item);
 
             if !acceptable_start || !acceptable_end || !acceptable_item {
                 // try the next interpretation

@@ -1,8 +1,8 @@
 use crate::Token;
 use std::hash::Hash;
 
-pub trait ASTNodeLabel: Hash + Clone + Copy + PartialEq + Eq {}
-impl<T> ASTNodeLabel for T where T: Hash + Clone + Copy + PartialEq + Eq {}
+pub trait ASTNodeLabel: std::fmt::Debug + Hash + Clone + Copy + PartialEq + Eq {}
+impl<T> ASTNodeLabel for T where T: std::fmt::Debug + Hash + Clone + Copy + PartialEq + Eq {}
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum ASTNode<'a, Label: ASTNodeLabel> {
