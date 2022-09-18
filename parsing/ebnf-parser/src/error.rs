@@ -47,7 +47,7 @@ impl<'a, Label: std::fmt::Debug> std::fmt::Display for ParserError<'a, Label> {
                 line,
                 col,
             } => write!(f, "Parsing Error {}:{}: Unexpected {:?}", line, col, token.label),
-            ParserError::UnexpectedEOF=> write!(f, "Parsing Error Unexpecteed EOF"),
+            ParserError::UnexpectedEOF=> write!(f, "Parsing Error: Unexpected EOF"),
         }
     }
 }
