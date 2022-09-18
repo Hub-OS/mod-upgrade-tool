@@ -129,7 +129,7 @@ export default async function (game_folder: string) {
 local old_make_frame_data = make_frame_data
 local function make_frame_data(frames)
   local updated_frames = {}
-  for i, pair in ipairs(frames) do\
+  for i, pair in ipairs(frames) do
     updated_frames[i] = { pair[1], math.floor(pair[2] * 60 + 0.5) }
   end
   return old_make_frame_data(updated_frames)
