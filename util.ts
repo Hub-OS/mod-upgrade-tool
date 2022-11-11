@@ -68,6 +68,20 @@ export function collectTokens(node: ASTNode): string[] {
   return tokens;
 }
 
+export function getMethodNameNode(function_node: ASTNode): ASTNode | undefined {
+  if (function_node.type != "functioncall") {
+    throw new Error("not a function");
+  }
+
+  const name_node = function_node.children![function_node.children!.length - 2];
+
+  if (name_node.type != "Name") {
+    return undefined;
+  }
+
+  return name_node;
+}
+
 export function getArgumentNode(
   function_node: ASTNode,
   argument_index: number

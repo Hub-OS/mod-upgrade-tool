@@ -13,7 +13,8 @@ async function main() {
     throw "GAME_FOLDER not specified!";
   }
 
-  const version_list = ["v2"];
+  // initialize with defaults, automatically populated after this
+  const version_list = ["ONB-v2"];
   const version_upgraders: { [version: string]: Upgrader } = {};
 
   // find upgraders
@@ -66,10 +67,14 @@ async function main() {
   }
 
   // resolve upgrade path
-  const start_index = new_version ? version_list.indexOf(previous_version) : 0;
+  const start_index = previous_version
+    ? version_list.indexOf(previous_version)
+    : 0;
+
   const latest_index = new_version
     ? version_list.indexOf(new_version)
     : version_list.length - 1;
+
   const end_index = latest_index - 1;
 
   const upgraders = [];

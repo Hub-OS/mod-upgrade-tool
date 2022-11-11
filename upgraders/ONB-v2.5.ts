@@ -59,8 +59,8 @@ const functionArgumentPatches: ArgumentPatcher[] = [
   },
 ];
 
-export const PREVIOUS_VERSION = "v2";
-export const NEXT_VERSION = "v2.5";
+export const PREVIOUS_VERSION = "ONB-v2";
+export const NEXT_VERSION = "ONB-v2.5";
 
 export default async function (game_folder: string) {
   const files = await findFiles(game_folder + "/resources");

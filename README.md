@@ -20,16 +20,17 @@ Since you may be new to deno here's a [cheat sheet](https://droces.github.io/Den
 To create a new upgrader add a `*.ts` file to the `upgraders folder`, it will automatically get picked up by the upgrade tool and warn you about possible upgrade path issues.
 
 Here's a template:
+
 ```ts
-import { findFiles } from "../util.ts"
+import { findFiles } from "../util.ts";
 
 // MODIFY THESE
-export const PREVIOUS_VERSION = "v2.5"
-export const NEXT_VERSION = "v3"
+export const PREVIOUS_VERSION = "0.1";
+export const NEXT_VERSION = "0.2";
 
 export default async function (gameFolder: string) {
   const files = await findFiles(gameFolder + "/resources/mods");
 
-  const luaFiles = files.filter(path => path.toLowerCase().endsWith(".lua"));
+  const luaFiles = files.filter((path) => path.toLowerCase().endsWith(".lua"));
 }
 ```
