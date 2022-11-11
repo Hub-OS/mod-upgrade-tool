@@ -68,12 +68,15 @@ export function collectTokens(node: ASTNode): string[] {
   return tokens;
 }
 
-export function getMethodNameNode(function_node: ASTNode): ASTNode | undefined {
-  if (function_node.type != "functioncall") {
-    throw new Error("not a function");
+export function getMethodNameNode(
+  functioncall_node: ASTNode
+): ASTNode | undefined {
+  if (functioncall_node.type != "functioncall") {
+    throw new Error("not a functioncall");
   }
 
-  const name_node = function_node.children![function_node.children!.length - 2];
+  const name_node =
+    functioncall_node.children![functioncall_node.children!.length - 2];
 
   if (name_node.type != "Name") {
     return undefined;
@@ -83,14 +86,15 @@ export function getMethodNameNode(function_node: ASTNode): ASTNode | undefined {
 }
 
 export function getArgumentNode(
-  function_node: ASTNode,
+  functioncall_node: ASTNode,
   argument_index: number
 ): ASTNode | undefined {
-  if (function_node.type != "functioncall") {
-    throw new Error("not a function");
+  if (functioncall_node.type != "functioncall") {
+    throw new Error("not a functioncall");
   }
 
-  const args_node = function_node.children![function_node.children!.length - 1];
+  const args_node =
+    functioncall_node.children![functioncall_node.children!.length - 1];
 
   const exp_list_node = args_node.children![1];
 
@@ -101,6 +105,29 @@ export function getArgumentNode(
   const argument_node_index = argument_index + argument_index;
 
   return exp_list_node!.children![argument_node_index];
+}
+
+export function getFunctionParameters(function_node: ASTNode): ASTNode[] {
+  let funcbody_node = function_node;
+
+  if (function_node.type != "funcbody" && function_node.children) {
+    funcbody_node = function_node.children[function_node.children.length - 1];
+  }
+
+  if (funcbody_node.type != "funcbody") {
+    throw new Error("not a function");
+  }
+
+  const parlist_node = funcbody_node.children![1];
+
+  if (parlist_node.type != "parlist") {
+    return [];
+  }
+
+  const namelist = parlist_node.children![0];
+
+  // skip commas
+  return namelist.children!.filter((_, i) => i % 2 == 0);
 }
 
 /// Lists files

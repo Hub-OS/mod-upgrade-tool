@@ -9,6 +9,7 @@ import {
   ASTNode,
   getMethodNameNode,
   arraysEqual,
+  getFunctionParameters,
 } from "../util.ts";
 
 const leafRewrites: { [key: string]: string } = {
@@ -159,20 +160,31 @@ type SetterPatcher = {
 const setter_patchers: SetterPatcher[] = [
   {
     nameToken: "on_update_func",
-    expPatchFunction: (exp_node) => {
-      if (arraysEqual(collectTokens(exp_node), ["nil"])) {
+    expPatchFunction: (exp_list_node) => {
+      if (arraysEqual(collectTokens(exp_list_node), ["nil"])) {
+        return [];
+      }
+
+      const exp_node = exp_list_node.children![0];
+      const possible_function_def = exp_node.children![0];
+
+      if (
+        possible_function_def.type == "functiondef" &&
+        getFunctionParameters(possible_function_def).length < 2
+      ) {
+        // this on_update_func isn't using delta time, no need to modify
         return [];
       }
 
       return [
         new Patch(
-          exp_node.start,
-          exp_node.start,
+          exp_list_node.start,
+          exp_list_node.start,
           " --[[patch--]] function(_upgrader_entity) local onb_update_func = --[[--]] "
         ),
         new Patch(
-          exp_node.end,
-          exp_node.end,
+          exp_list_node.end,
+          exp_list_node.end,
           " --[[patch--]] if onb_update_func then onb_update_func(_upgrader_entity, 0.01666) end end --[[--]]"
         ),
       ];
