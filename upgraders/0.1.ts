@@ -238,6 +238,12 @@ export default async function (game_folder: string) {
       );
     }
 
+    if (source.includes("register_component")) {
+      console.log(
+        `"${path}" contains "entity:register_component(component)" which requires manual conversion to "local component = entity:create_component(lifetime)"`
+      );
+    }
+
     const patches: Patch[] = [];
 
     walk(ast, (node) => {
