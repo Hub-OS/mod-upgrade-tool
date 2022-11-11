@@ -55,7 +55,7 @@ function commentPatch(node: ASTNode): Patch[] {
     new Patch(
       node.start,
       node.end,
-      "--[[ " + collectTokens(node).join("") + " ]]--"
+      "--[[ " + collectTokens(node).join("") + " --]]"
     ),
   ];
 }
@@ -133,6 +133,22 @@ const default_function_patchers: FunctionPatcher[] = [
       ];
     },
   },
+  {
+    nameTokens: ["make_async_lockout"],
+    patchFunction: (node) => {
+      const arg_node = getArgumentNode(node, 0);
+
+      if (!arg_node) {
+        return [];
+      }
+
+      // math.floor([ARG_NODE] * 60 + 0.5)
+      return [
+        new Patch(arg_node.start, arg_node.start, "math.floor("),
+        new Patch(arg_node.end, arg_node.end, " * 60 + 0.5)"),
+      ];
+    },
+  },
 ];
 
 type SetterPatcher = {
@@ -152,12 +168,12 @@ const setter_patchers: SetterPatcher[] = [
         new Patch(
           exp_node.start,
           exp_node.start,
-          "function(_upgrader_entity) local onb_update_func = "
+          " --[[patch--]] function(_upgrader_entity) local onb_update_func = --[[--]] "
         ),
         new Patch(
           exp_node.end,
           exp_node.end,
-          " if onb_update_func then onb_update_func(_upgrader_entity, 0.01666) end end"
+          " --[[patch--]] if onb_update_func then onb_update_func(_upgrader_entity, 0.01666) end end --[[--]]"
         ),
       ];
     },
