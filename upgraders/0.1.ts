@@ -180,12 +180,64 @@ const setter_patchers: SetterPatcher[] = [
         new Patch(
           exp_list_node.start,
           exp_list_node.start,
-          " --[[patch--]] function(_upgrader_entity) local onb_update_func = --[[--]] "
+          " --[[patch--]] function(_upgrader_entity) local onb_update_func = --[[end patch--]] "
         ),
         new Patch(
           exp_list_node.end,
           exp_list_node.end,
-          " --[[patch--]] if onb_update_func then onb_update_func(_upgrader_entity, 0.01666) end end --[[--]]"
+          " --[[patch--]] if onb_update_func then onb_update_func(_upgrader_entity, 0.01666) end end --[[end patch--]]"
+        ),
+      ];
+    },
+  },
+  {
+    nameToken: "on_delete_func",
+    expPatchFunction: (exp_list_node) => {
+      const tokens = collectTokens(exp_list_node);
+
+      if (arraysEqual(tokens, ["nil"])) {
+        return [];
+      }
+
+      const exp_node = exp_list_node.children![0];
+      const possible_function_def = exp_node.children![0];
+      const parameter_nodes =
+        possible_function_def.type == "functiondef"
+          ? getFunctionParameters(possible_function_def)
+          : undefined;
+
+      if (parameter_nodes && parameter_nodes.length > 0) {
+        const function_body = possible_function_def.children![1];
+        const end_node =
+          function_body.children![function_body.children!.length - 1];
+
+        const entity_parameter = parameter_nodes[0].content;
+        const erase_call = `${entity_parameter}:erase()`;
+
+        if (tokens.join("").includes(erase_call)) {
+          // no need to patch, function already calls erase
+          return [];
+        }
+
+        return [
+          new Patch(
+            end_node.start,
+            end_node.start,
+            ` --[[patch--]] ${erase_call} --[[end patch--]] `
+          ),
+        ];
+      }
+
+      return [
+        new Patch(
+          exp_list_node.start,
+          exp_list_node.start,
+          " --[[patch--]] function(_upgrader_entity) local onb_delete_func = --[[end patch--]] "
+        ),
+        new Patch(
+          exp_list_node.end,
+          exp_list_node.end,
+          " --[[patch--]] if onb_delete_func then onb_delete_func(_upgrader_entity) _upgrader_entity:erase() end end --[[end patch--]]"
         ),
       ];
     },
