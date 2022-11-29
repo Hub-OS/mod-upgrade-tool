@@ -39,7 +39,6 @@ function pathPatches(node: ASTNode): Patch[] | undefined {
   }
 
   const method_node = getMethodNameNode(node)!;
-  const path = collectTokens(pathNode).join("");
 
   return [
     new Patch(
@@ -47,17 +46,15 @@ function pathPatches(node: ASTNode): Patch[] | undefined {
       method_node.end,
       method_node.content! + "_path"
     ),
-    new Patch(texture_arg?.start, texture_arg?.end, path),
+    new Patch(texture_exp.start, pathNode.start, ""),
+    new Patch(pathNode.end, texture_exp.end, ""),
   ];
 }
 
 function commentPatch(node: ASTNode): Patch[] {
   return [
-    new Patch(
-      node.start,
-      node.end,
-      "--[[ " + collectTokens(node).join("") + " --]]"
-    ),
+    new Patch(node.start, node.start, "--[[ "),
+    new Patch(node.end, node.end, " --]]"),
   ];
 }
 
