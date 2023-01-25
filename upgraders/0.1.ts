@@ -17,6 +17,7 @@ const leafRewrites: { [key: string]: string } = {
   // callbacks
   _folderpath: '""',
   set_special_description: "set_description",
+  package_build: "battle_init",
 };
 
 type MethodPatcher = {
