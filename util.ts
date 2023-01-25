@@ -1,4 +1,7 @@
 import { Lua54Parser } from "./parsing/mod-parsers-wasm/pkg/index.ts";
+import { LuaFactory, LuaEngine } from "npm:wasmoon@1.14";
+import TOML from "npm:@iarna/toml";
+export { TOML };
 
 export type ASTNode = {
   type: string;
@@ -154,6 +157,24 @@ export async function findFiles(folder: string): Promise<string[]> {
   return file_list;
 }
 
+export function getParentFolder(path: string): string {
+  const last_index = path.lastIndexOf("/");
+
+  if (last_index == -1) {
+    return ".";
+  }
+
+  return path.slice(0, last_index);
+}
+
+export function getAncestorFolder(path: string, reverse_depth = 0): string {
+  for (let i = 0; i <= reverse_depth; i++) {
+    path = getParentFolder(path);
+  }
+
+  return path;
+}
+
 /// Used with patch() to replace parts of a string
 export class Patch {
   start: number;
@@ -202,4 +223,32 @@ export function patch(source: string, patches: Patch[]): string {
 /// Shallow array comparison
 export function arraysEqual<T>(a: T[], b: T[]): boolean {
   return a.length == b.length && a.every((value, i) => value == b[i]);
+}
+
+const lua_factory = new LuaFactory();
+
+export { LuaEngine };
+export async function createLuaEngine(): LuaEngine {
+  const lua = await lua_factory.createEngine();
+
+  const scary_things = [
+    "io",
+    "os",
+    "coroutine",
+    "string",
+    "utf8",
+    "debug",
+    "package",
+    "require",
+    "dofile",
+    "loadfile",
+    "loadstring",
+    "load",
+  ];
+
+  for (const scary_thing of scary_things) {
+    lua.global.set(scary_thing, "");
+  }
+
+  return lua;
 }

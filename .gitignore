@@ -3,5 +3,6 @@ resources
 mods
 
 .vscode
+node_modules
 
 _*

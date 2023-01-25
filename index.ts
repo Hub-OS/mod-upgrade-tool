@@ -1,3 +1,6 @@
+// must be imported here, dynamically loading seems to break wasmoon
+import "./util.ts";
+
 type Upgrader = {
   PREVIOUS_VERSION: string;
   NEXT_VERSION: string;

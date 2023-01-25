@@ -10,6 +10,7 @@ import {
   getMethodNameNode,
   arraysEqual,
   getFunctionParameters,
+  getParentFolder,
 } from "../util.ts";
 
 const leafRewrites: { [key: string]: string } = {
@@ -241,6 +242,15 @@ const setter_patchers: SetterPatcher[] = [
   },
 ];
 
+function isCharacter(mod_folder: string, path: string): boolean {
+  // is in the enemies folder + is not a root package
+  const enemies_folder = mod_folder + "/enemies";
+  return (
+    path.includes(enemies_folder) &&
+    getParentFolder(getParentFolder(path)) != enemies_folder
+  );
+}
+
 export const PREVIOUS_VERSION = "ONB-v2.5";
 export const NEXT_VERSION = "0.1";
 
@@ -274,7 +284,15 @@ export default async function (game_folder: string) {
     .map((old_path) => new_mod_folder + old_path.slice(old_mod_folder.length));
 
   for (const path of luaFiles) {
-    const source = await Deno.readTextFile(path);
+    let source = await Deno.readTextFile(path);
+
+    if (isCharacter(new_mod_folder, path)) {
+      // child package of a battle, assuming to be a character
+      source = source.replace(
+        "function package_init",
+        "function character_init"
+      );
+    }
 
     const has_v2_frame_data_patch = source.includes("old_make_frame_data");
 
