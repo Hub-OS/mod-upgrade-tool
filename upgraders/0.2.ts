@@ -24,7 +24,7 @@ type PackageMeta = {
     description?: string;
 
     // blocks
-    color?: string;
+    colors?: string[];
     shape?: number[][];
     flat?: boolean;
 
@@ -176,7 +176,7 @@ function createPackageTable(meta: PackageMeta) {
 
     // blocks
     set_color: (color: string) => {
-      meta.package.color = color;
+      meta.package.colors = [color];
     },
     set_shape: (shape: number[]) => {
       meta.package.shape = [[], [], [], [], []];
