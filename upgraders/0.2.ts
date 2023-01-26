@@ -16,6 +16,10 @@ import {
   patch,
 } from "../util.ts";
 
+const leafRewrites: { [key: string]: string } = {
+  mod_max_health: "boost_max_health",
+};
+
 type PackageMeta = {
   package: {
     category: string;
@@ -377,7 +381,7 @@ async function generateMetaFile(
 
   package_init(package_table);
 
-  const meta_text = TOML.stringify(meta, { newline: "\n" });
+  const meta_text = TOML.stringify(meta);
 
   const meta_path = getParentFolder(path) + "/package.toml";
   console.log(`Creating ${meta_path}`);
@@ -392,6 +396,13 @@ async function stripPackageFunctions(path: string, source: string) {
   const patches: Patch[] = [];
 
   walk(ast, (node) => {
+    const leafRewrite = node.content && leafRewrites[node.content];
+
+    if (leafRewrite) {
+      patches.push(new Patch(node.start, node.end, leafRewrite));
+      return;
+    }
+
     if (node.type == "stat" && node.children![0]!.content == "function") {
       const func_name = collectTokens(node.children![1]!).join("");
 
