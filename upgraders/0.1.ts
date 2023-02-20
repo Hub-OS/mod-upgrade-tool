@@ -179,12 +179,12 @@ const setter_patchers: SetterPatcher[] = [
         new Patch(
           exp_list_node.start,
           exp_list_node.start,
-          " --[[patch--]] function(_upgrader_entity) local onb_update_func = --[[end patch--]] "
+          " --[[dt patch--]] function(_upgrader_self) local onb_update_func = --[[end dt patch--]] "
         ),
         new Patch(
           exp_list_node.end,
           exp_list_node.end,
-          " --[[patch--]] if onb_update_func then onb_update_func(_upgrader_entity, 0.01666) end end --[[end patch--]]"
+          " --[[dt patch--]] if onb_update_func then onb_update_func(_upgrader_self, 0.01666) end end --[[end dt patch--]]"
         ),
       ];
     },
