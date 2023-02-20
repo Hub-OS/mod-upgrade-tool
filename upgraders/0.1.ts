@@ -18,6 +18,7 @@ const leafRewrites: { [key: string]: string } = {
   _folderpath: '""',
   set_special_description: "set_description",
   package_build: "battle_init",
+  charged_time_table_func: "calculate_charge_time_func",
 };
 
 type MethodPatcher = {
