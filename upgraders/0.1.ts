@@ -312,12 +312,6 @@ export default async function (game_folder: string) {
       continue;
     }
 
-    if (source.includes("add_step")) {
-      console.log(
-        `"${path}" contains "action:add_step(step)" which requires manual conversion to "local step = action:create_step()"`
-      );
-    }
-
     if (source.includes("register_component")) {
       console.log(
         `"${path}" contains "entity:register_component(component)" which requires manual conversion to "local component = entity:create_component(lifetime)"`
@@ -432,6 +426,33 @@ export default async function (game_folder: string) {
         "local old_make_frame_data = make_frame_data",
         "local old_make_frame_data = function(data) return data end"
       );
+    }
+
+    if (
+      (source.includes("add_step") || source.includes("Battle.Step.new")) &&
+      !source.includes("Battle.Step.new = ")
+    ) {
+      patched_source =
+        `\
+-- Battle.Step.new() + card_action:add_step() Shims
+-- delete and upgrade to card_action:create_step()
+Battle.Step.new = function()
+  return {}
+end
+Battle.CardAction.add_step = function(self, step)
+  local real_step = self:create_step()
+  for k, v in pairs(step) do
+    real_step[k] = v
+  end
+  local forward = {
+    __index = function(k) return real_step[k] end,
+    __new_index = function(k, v) real_step[k] = v end
+  }
+  setmetatable(step, forward)
+end
+-- End of Shim
+
+` + patched_source;
     }
 
     // saving
