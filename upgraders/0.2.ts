@@ -164,6 +164,14 @@ function injectGlobals(lua: LuaEngine, meta: PackageMeta, entry_path: string) {
       return { r, g, b, a };
     },
   });
+
+  // for shims
+  lua.global.set("Battle", {
+    Component: {},
+    Entity: {},
+    Step: {},
+    CardAction: {},
+  });
 }
 
 function createPackageTable(meta: PackageMeta) {

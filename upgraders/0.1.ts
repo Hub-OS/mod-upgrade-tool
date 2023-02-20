@@ -334,12 +334,6 @@ export default async function (game_folder: string) {
       continue;
     }
 
-    if (source.includes("register_component")) {
-      console.log(
-        `"${path}" contains "entity:register_component(component)" which requires manual conversion to "local component = entity:create_component(lifetime)"`
-      );
-    }
-
     const patches: Patch[] = [];
 
     walk(ast, (node) => {
@@ -456,7 +450,7 @@ export default async function (game_folder: string) {
     ) {
       patched_source =
         `\
--- Battle.Step.new() + card_action:add_step() Shims
+-- Battle.Step.new() + card_action:add_step(step) Shims
 -- delete and upgrade to card_action:create_step()
 Battle.Step.new = function()
   return {}
@@ -467,10 +461,39 @@ Battle.CardAction.add_step = function(self, step)
     real_step[k] = v
   end
   local forward = {
-    __index = function(k) return real_step[k] end,
-    __new_index = function(k, v) real_step[k] = v end
+    __index = function(t, k) return real_step[k] end,
+    __new_index = function(t, k, v) real_step[k] = v end
   }
   setmetatable(step, forward)
+end
+-- End of Shim
+
+` + patched_source;
+    }
+
+    if (
+      (source.includes("register_component") ||
+        source.includes("Battle.Component.new")) &&
+      !source.includes("Battle.Component.new = ")
+    ) {
+      patched_source =
+        `\
+-- Battle.Component.new(entity, lifetime) + entity:register_component(component) Shims
+-- delete and upgrade to entity:create_component(lifetime)
+Battle.Component.new = function(_, lifetime)
+  return { ["*lifetime"] = lifetime }
+end
+Battle.Entity.register_component = function(self, component)
+  local real_component = self:create_component(component["*lifetime"])
+  component["*lifetime"] = nil
+  for k, v in pairs(component) do
+    real_component[k] = v
+  end
+  local forward = {
+    __index = function(t, k) return real_component[k] end,
+    __new_index = function(t, k, v) real_component[k] = v end
+  }
+  setmetatable(component, forward)
 end
 -- End of Shim
 
