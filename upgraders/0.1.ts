@@ -22,7 +22,7 @@ const leafRewrites: { [key: string]: string } = {
 
 type MethodPatcher = {
   nameToken: string;
-  patchFunction: (node: ASTNode) => Patch[] | undefined;
+  patchFunction: (node: ASTNode, source: string) => Patch[] | undefined;
 };
 
 // converts `package:set_*_texture(Engine.load_texture(""))`  to `package:set_*_texture_path("")`
@@ -95,6 +95,28 @@ const method_patcher: MethodPatcher[] = [
 
       if (y_node) {
         patches.push(new Patch(y_node.end, y_node.end, " * 0.5"));
+      }
+
+      return patches;
+    },
+  },
+  {
+    nameToken: "set_mutator",
+    patchFunction: (node, source) => {
+      const patches = [new Patch(node.start, node.end, "")];
+
+      const arg = getArgumentNode(node, 0);
+
+      if (arg) {
+        patches.push(
+          new Patch(
+            source.length,
+            source.length,
+            "\nblock_init = function(block) (" +
+              source.slice(arg.start, arg.end) +
+              ")(block:get_owner()) end"
+          )
+        );
       }
 
       return patches;
@@ -343,7 +365,7 @@ export default async function (game_folder: string) {
             continue;
           }
 
-          const function_patches = patcher.patchFunction(node);
+          const function_patches = patcher.patchFunction(node, source);
 
           if (!function_patches) {
             console.log(`Failed to patch "${method_name}" in "${path}"`);
