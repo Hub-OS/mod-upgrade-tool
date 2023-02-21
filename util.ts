@@ -105,9 +105,14 @@ export function getArgumentNode(
     return undefined;
   }
 
-  const argument_node_index = argument_index + argument_index;
+  const argument_and_comma_nodes = exp_list_node!.children!;
 
-  return exp_list_node!.children![argument_node_index];
+  const argument_node_index =
+    argument_index < 0
+      ? argument_and_comma_nodes.length - argument_index * 2 - 1
+      : argument_index * 2;
+
+  return argument_and_comma_nodes[argument_node_index];
 }
 
 export function getFunctionParameters(function_node: ASTNode): ASTNode[] {
@@ -228,7 +233,7 @@ export function arraysEqual<T>(a: T[], b: T[]): boolean {
 const lua_factory = new LuaFactory();
 
 export { LuaEngine };
-export async function createLuaEngine(): LuaEngine {
+export async function createLuaEngine(): Promise<LuaEngine> {
   const lua = await lua_factory.createEngine();
 
   const scary_things = [
