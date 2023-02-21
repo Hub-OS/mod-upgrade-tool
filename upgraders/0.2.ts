@@ -18,6 +18,7 @@ import {
 
 const leafRewrites: { [key: string]: string } = {
   mod_max_health: "boost_max_health",
+  on_scene_inject_func: "on_init_func",
 };
 
 type PackageMeta = {
@@ -399,7 +400,7 @@ async function generateMetaFile(
   return true;
 }
 
-async function stripPackageFunctions(path: string, source: string) {
+async function patchLua(path: string, source: string, is_root_entry: boolean) {
   const ast = parseLua54(source);
   const patches: Patch[] = [];
 
@@ -411,7 +412,11 @@ async function stripPackageFunctions(path: string, source: string) {
       return;
     }
 
-    if (node.type == "stat" && node.children![0]!.content == "function") {
+    if (
+      is_root_entry &&
+      node.type == "stat" &&
+      node.children![0]!.content == "function"
+    ) {
       const func_name = collectTokens(node.children![1]!).join("");
 
       if (
@@ -436,22 +441,24 @@ export const NEXT_VERSION = "0.2";
 
 export default async function (game_folder: string) {
   const mod_folder = game_folder + "/mods";
-  const files = (await findFiles(mod_folder)).filter(
-    (path: string) =>
-      path.endsWith("entry.lua") && getAncestorFolder(path, 2) == mod_folder
+  const files = (await findFiles(mod_folder)).filter((path: string) =>
+    path.endsWith(".lua")
   );
 
   for (const path of files) {
+    const is_root_entry =
+      path.endsWith("entry.lua") && getAncestorFolder(path, 2) == mod_folder;
+
     const lua = await createLuaEngine();
 
     try {
       const source = await Deno.readTextFile(path);
 
-      if (!(await generateMetaFile(lua, path, source))) {
+      if (is_root_entry && !(await generateMetaFile(lua, path, source))) {
         continue;
       }
 
-      stripPackageFunctions(path, source);
+      patchLua(path, source, is_root_entry);
     } catch (err) {
       console.error(`${err} in "${path}"`);
     } finally {
