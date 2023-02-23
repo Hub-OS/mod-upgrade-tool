@@ -109,7 +109,7 @@ export default async function (game_folder: string) {
           }
 
           // swapping the first argument with DefensePriority.Last
-          const argumentNode = getArgumentNode(node, 0);
+          const argumentNode = getArgumentNode(node, patcher.argumentIndex);
 
           if (!argumentNode) {
             continue;
