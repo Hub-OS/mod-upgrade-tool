@@ -113,9 +113,9 @@ const method_patcher: MethodPatcher[] = [
           new Patch(
             source.length,
             source.length,
-            "\nblock_init = function(block) (" +
+            "\naugment_init = function(augment) (" +
               source.slice(arg.start, arg.end) +
-              ")(block:get_owner()) end"
+              ")(augment:get_owner()) end"
           )
         );
       }
@@ -275,6 +275,21 @@ function isCharacter(mod_folder: string, path: string): boolean {
   );
 }
 
+function transformPath(
+  path: string,
+  new_mod_folder: string,
+  old_mod_folder: string
+): string {
+  const category_end = path.indexOf("/", old_mod_folder.length + 1);
+  let category_folder = path.slice(old_mod_folder.length + 1, category_end);
+
+  if (category_folder == "blocks") {
+    category_folder = "augments";
+  }
+
+  return new_mod_folder + "/" + category_folder + path.slice(category_end);
+}
+
 export const PREVIOUS_VERSION = "ONB-v2.5";
 export const NEXT_VERSION = "0.1";
 
@@ -286,26 +301,22 @@ export default async function (game_folder: string) {
   console.log("Copying files to new mod folder...");
 
   for (const path of files) {
-    const parent_start = old_mod_folder.length;
-    const parent_end = path.lastIndexOf("/");
-    const parent_folder = new_mod_folder + path.slice(parent_start, parent_end);
+    const new_path = transformPath(path, new_mod_folder, old_mod_folder);
+    const parent_folder = new_path.slice(0, new_path.lastIndexOf("/"));
 
     await Deno.mkdir(parent_folder, { recursive: true }).catch(
       // ignore error
       () => {}
     );
 
-    await Deno.copyFile(
-      path,
-      new_mod_folder + path.slice(old_mod_folder.length)
-    ).catch(() => {
+    await Deno.copyFile(path, new_path).catch(() => {
       console.log(`Failed to copy "${path}"`);
     });
   }
 
   const luaFiles = files
     .filter((path) => path.toLowerCase().endsWith(".lua"))
-    .map((old_path) => new_mod_folder + old_path.slice(old_mod_folder.length));
+    .map((old_path) => transformPath(old_path, new_mod_folder, old_mod_folder));
 
   for (const path of luaFiles) {
     let source = await Deno.readTextFile(path);

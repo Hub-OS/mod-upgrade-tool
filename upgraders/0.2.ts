@@ -339,8 +339,8 @@ function resolvePackageCategory(entry_path: string): string {
   }
 
   switch (category_folder.slice(index + 1)) {
-    case "blocks":
-      return "block";
+    case "augments":
+      return "augment";
     case "cards":
       return "card";
     case "enemies":
