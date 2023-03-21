@@ -1,5 +1,7 @@
 import {
+  arraysEqual,
   ASTNode,
+  collectTokens,
   findFiles,
   getArgumentNode,
   getMethodNameNode,
@@ -20,7 +22,6 @@ const leafRewrites: { [key: string]: string } = {
   get_actor: "get_owner",
   copy_metadata: "copy_card_properties",
   set_metadata: "set_card_properties",
-  HitProps: "Battle.HitProps",
   highlight_tile: "set_tile_highlight",
   reserve_entity_by_id: "reserve_for_id",
   Empty: "PermaHole",
@@ -93,10 +94,32 @@ const method_patchers: MethodPatcher[] = [
   },
 ];
 
+type FunctionPatcher = {
+  nameTokens: string[];
+  patchFunction: (node: ASTNode) => Patch[] | undefined;
+};
+
+const function_patchers: FunctionPatcher[] = [
+  {
+    nameTokens: ["HitProps", ".", "new"],
+    patchFunction: (node) => {
+      const name_node = node.children![0];
+
+      return [new Patch(name_node.start, name_node.end, "Battle.HitProps.new")];
+    },
+  },
+];
+
 export default async function (game_folder: string) {
   const mod_folder = game_folder + "/mods";
 
   console.log("Moving mods/enemies/ to mods/battles/");
+
+  try {
+    await Deno.mkdir(mod_folder + "/battles/");
+  } catch {
+    // we don't care if this folder already exists.
+  }
 
   for await (const entry of Deno.readDir(mod_folder + "/enemies")) {
     const source = mod_folder + "/enemies/" + entry.name;
@@ -150,6 +173,24 @@ export default async function (game_folder: string) {
           }
 
           const function_patches = patcher.patchFunction(node, source);
+
+          if (!function_patches) {
+            console.log(`Failed to patch "${method_name}" in "${path}"`);
+            continue;
+          }
+
+          patches.push(...function_patches);
+        }
+
+        // function patches
+        const prefix_exp_tokens = collectTokens(node.children[0]);
+
+        for (const patcher of function_patchers) {
+          if (!arraysEqual(prefix_exp_tokens, patcher.nameTokens)) {
+            continue;
+          }
+
+          const function_patches = patcher.patchFunction(node);
 
           if (!function_patches) {
             console.log(`Failed to patch "${method_name}" in "${path}"`);
