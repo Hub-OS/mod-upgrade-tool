@@ -17,7 +17,7 @@ export function parseLua54(source: string): ASTNode {
   return lua54_parser.parse(source) as ASTNode;
 }
 
-export function walk(
+export function walkAst(
   node: ASTNode,
   callback: (node: ASTNode, path: number[]) => void
 ) {
@@ -62,7 +62,7 @@ export function walk(
 export function collectTokens(node: ASTNode): string[] {
   const tokens: string[] = [];
 
-  walk(node, (node) => {
+  walkAst(node, (node) => {
     if (node.content != undefined) {
       tokens.push(node.content);
     }

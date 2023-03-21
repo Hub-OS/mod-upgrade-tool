@@ -5,7 +5,7 @@ import {
   parseLua54,
   patch,
   Patch,
-  walk,
+  walkAst,
   ASTNode,
   getMethodNameNode,
   arraysEqual,
@@ -61,7 +61,7 @@ function commentPatch(node: ASTNode): Patch[] {
   ];
 }
 
-const method_patcher: MethodPatcher[] = [
+const method_patchers: MethodPatcher[] = [
   {
     nameToken: "set_speed",
     patchFunction: commentPatch,
@@ -342,13 +342,13 @@ export default async function (game_folder: string) {
     try {
       ast = parseLua54(source);
     } catch (e) {
-      console.log(`Failed to parse "${path}":\n${e}`);
+      console.error(`%cFailed to parse "${path}":\n${e}`, "color: red");
       continue;
     }
 
     const patches: Patch[] = [];
 
-    walk(ast, (node) => {
+    walkAst(ast, (node) => {
       const leafRewrite = node.content && leafRewrites[node.content];
 
       if (leafRewrite) {
@@ -366,7 +366,7 @@ export default async function (game_folder: string) {
         const method_node = getMethodNameNode(node);
         const method_name = method_node?.content;
 
-        for (const patcher of method_patcher) {
+        for (const patcher of method_patchers) {
           if (patcher.nameToken != method_name) {
             continue;
           }

@@ -6,7 +6,7 @@ import {
   parseLua54,
   patch,
   Patch,
-  walk,
+  walkAst,
   ASTNode,
 } from "../util.ts";
 
@@ -84,7 +84,7 @@ export default async function (game_folder: string) {
     let contains_frame_data = false;
     let contains_frame_data_patch = false;
 
-    walk(ast, (node) => {
+    walkAst(ast, (node) => {
       contains_frame_data ||= node.content == "make_frame_data";
       contains_frame_data_patch ||= node.content == "old_make_frame_data";
 

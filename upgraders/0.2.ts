@@ -10,7 +10,7 @@ import {
   LuaEngine,
   TOML,
   parseLua54,
-  walk,
+  walkAst,
   collectTokens,
   Patch,
   patch,
@@ -401,10 +401,18 @@ async function generateMetaFile(
 }
 
 async function patchLua(path: string, source: string, is_root_entry: boolean) {
-  const ast = parseLua54(source);
+  let ast;
+
+  try {
+    ast = parseLua54(source);
+  } catch (e) {
+    console.error(`%cFailed to parse "${path}":\n${e}`, "color:red");
+    return;
+  }
+
   const patches: Patch[] = [];
 
-  walk(ast, (node) => {
+  walkAst(ast, (node) => {
     const leafRewrite = node.content && leafRewrites[node.content];
 
     if (leafRewrite) {
@@ -460,7 +468,7 @@ export default async function (game_folder: string) {
 
       patchLua(path, source, is_root_entry);
     } catch (err) {
-      console.error(`${err} in "${path}"`);
+      console.error(`%c${err} in "${path}"`, "color: red");
     } finally {
       lua.global.close();
     }
