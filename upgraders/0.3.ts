@@ -92,6 +92,14 @@ const method_patchers: MethodPatcher[] = [
       ];
     },
   },
+  {
+    nameToken: "stream_music",
+    patchFunction: function (node, _) {
+      const method_node = getMethodNameNode(node)!;
+
+      return [new Patch(method_node.start, method_node.end, "set_music")];
+    },
+  },
 ];
 
 type FunctionPatcher = {
@@ -106,6 +114,14 @@ const function_patchers: FunctionPatcher[] = [
       const name_node = node.children![0];
 
       return [new Patch(name_node.start, name_node.end, "Battle.HitProps.new")];
+    },
+  },
+  {
+    nameTokens: ["Engine", ".", "stream_music"],
+    patchFunction: (node) => {
+      const name_node = node.children![0];
+
+      return [new Patch(name_node.start, name_node.end, "Engine.play_music")];
     },
   },
 ];
