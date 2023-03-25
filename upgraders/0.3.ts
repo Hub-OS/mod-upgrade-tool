@@ -20,7 +20,7 @@ const leafRewrites: { [key: string]: string } = {
   include: "require",
   CardAction: "Action",
   card_action_event: "queue_action",
-  get_actor: "get_owner",
+  get_actor: "owner",
   copy_metadata: "copy_card_properties",
   set_metadata: "set_card_properties",
   highlight_tile: "set_tile_highlight",
@@ -28,7 +28,7 @@ const leafRewrites: { [key: string]: string } = {
   Empty: "PermaHole",
   MoveAction: "Movement",
   raw_move_event: "queue_movement",
-  get_current_palette: "get_palette",
+  get_current_palette: "palette",
   set_animation: "load_animation",
   show: "reveal",
   enable_parent_shader: "use_root_shader",
@@ -39,6 +39,46 @@ const leafRewrites: { [key: string]: string } = {
   share_tile: "enable_sharing_tile",
   battle_init: "encounter_init",
   Engine: "Resources",
+  get_id: "id",
+  get_owner: "owner",
+  get_state: "state",
+  get_level: "level",
+  get_field: "field",
+  get_name: "name",
+  get_element: "element",
+  get_facing: "facing",
+  get_team: "team",
+  get_current_tile: "current_tile",
+  get_offset: "offset",
+  get_tile_offset: "tile_offset",
+  get_elevation: "elevation",
+  get_texture: "texture",
+  get_color: "color",
+  get_animation: "animation",
+  get_context: "context",
+  get_rank: "rank",
+  get_max_health: "max_health",
+  get_health: "health",
+  get_attack_level: "attack_level",
+  get_rapid_level: "rapid_level",
+  get_charge_level: "charge_level",
+  get_animation_progress: "animation_progress",
+  get_layer: "layer",
+  get_origin: "origin",
+  get_scale: "scale",
+  get_size: "size",
+  get_width: "width",
+  get_height: "height",
+  get_color_mode: "color_mode",
+  get_palette: "palette",
+  is_sharing_tile: "sharing_tile",
+  is_deleted: "deleted",
+  is_counterable: "counterable",
+  is_intangible: "intangible",
+  is_visible: "visible",
+  is_replaced: "replaced",
+  is_damage_blocked: "damage_blocked",
+  is_impact_blocked: "impact_blocked",
 };
 
 type MethodPatcher = {
@@ -53,7 +93,7 @@ const method_patchers: MethodPatcher[] = [
       const method_node = getMethodNameNode(node)!;
 
       return [
-        new Patch(method_node.start, method_node.end, "get_state"),
+        new Patch(method_node.start, method_node.end, "state"),
         new Patch(node.end, node.end, " == TileState.Cracked"),
       ];
     },
@@ -64,7 +104,7 @@ const method_patchers: MethodPatcher[] = [
       const method_node = getMethodNameNode(node)!;
 
       return [
-        new Patch(method_node.start, method_node.end, "get_state"),
+        new Patch(method_node.start, method_node.end, "state"),
         new Patch(node.end, node.end, " == TileState.Hidden"),
       ];
     },
@@ -126,11 +166,11 @@ const function_patchers: FunctionPatcher[] = [
   },
   {
     nameTokens: ["Engine", ".", "get_turn_gauge_value"],
-    patchFunction: generateRenameFuncPatchFunc("TurnGauge.get_progress"),
+    patchFunction: generateRenameFuncPatchFunc("TurnGauge.progress"),
   },
   {
     nameTokens: ["Engine", ".", "get_turn_gauge_time"],
-    patchFunction: generateRenameFuncPatchFunc("TurnGauge.get_time"),
+    patchFunction: generateRenameFuncPatchFunc("TurnGauge.time"),
   },
   {
     nameTokens: ["Engine", ".", "set_turn_gauge_time"],
@@ -138,7 +178,7 @@ const function_patchers: FunctionPatcher[] = [
   },
   {
     nameTokens: ["Engine", ".", "get_turn_gauge_max_time"],
-    patchFunction: generateRenameFuncPatchFunc("TurnGauge.get_max_time"),
+    patchFunction: generateRenameFuncPatchFunc("TurnGauge.max_time"),
   },
   {
     nameTokens: ["Engine", ".", "set_turn_gauge_max_time"],
