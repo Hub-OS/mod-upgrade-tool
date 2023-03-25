@@ -79,6 +79,7 @@ const leafRewrites: { [key: string]: string } = {
   is_replaced: "replaced",
   is_damage_blocked: "damage_blocked",
   is_impact_blocked: "impact_blocked",
+  add_attachment: "create_attachment",
 };
 
 type MethodPatcher = {
