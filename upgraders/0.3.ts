@@ -9,6 +9,7 @@ import {
   patch,
   Patch,
   walkAst,
+  TOML,
 } from "../util.ts";
 
 export const PREVIOUS_VERSION = "0.2";
@@ -25,16 +26,19 @@ const leafRewrites: { [key: string]: string } = {
   highlight_tile: "set_tile_highlight",
   reserve_entity_by_id: "reserve_for_id",
   Empty: "PermaHole",
-  MoveAction: "Battle.Movement",
+  MoveAction: "Movement",
   raw_move_event: "queue_movement",
   get_current_palette: "get_palette",
   set_animation: "load_animation",
   show: "reveal",
   enable_parent_shader: "use_root_shader",
   refresh: "apply",
-  reset_turn_gauge_to_default: "reset_turn_gauge_max_time",
-  get_turn_gauge_value: "get_turn_gauge_progress",
-  IntangibleRule: "Battle.IntangibleRule",
+  Battlestep: "Battle",
+  toggle_counter: "set_counterable",
+  toggle_hitbox: "enable_hitbox",
+  share_tile: "enable_sharing_tile",
+  battle_init: "encounter_init",
+  Engine: "Resources",
 };
 
 type MethodPatcher = {
@@ -103,25 +107,60 @@ const method_patchers: MethodPatcher[] = [
 ];
 
 type FunctionPatcher = {
-  nameTokens: string[];
+  nameTokens?: string[];
   patchFunction: (node: ASTNode) => Patch[] | undefined;
 };
 
+function generateRenameFuncPatchFunc(name: string): (node: ASTNode) => [Patch] {
+  return function (function_node) {
+    const name_node = function_node.children![0];
+
+    return [new Patch(name_node.start, name_node.end, name)];
+  };
+}
+
 const function_patchers: FunctionPatcher[] = [
   {
-    nameTokens: ["HitProps", ".", "new"],
-    patchFunction: (node) => {
-      const name_node = node.children![0];
-
-      return [new Patch(name_node.start, name_node.end, "Battle.HitProps.new")];
-    },
+    nameTokens: ["Engine", ".", "stream_music"],
+    patchFunction: generateRenameFuncPatchFunc("Resources.play_music"),
   },
   {
-    nameTokens: ["Engine", ".", "stream_music"],
+    nameTokens: ["Engine", ".", "get_turn_gauge_value"],
+    patchFunction: generateRenameFuncPatchFunc("TurnGauge.get_progress"),
+  },
+  {
+    nameTokens: ["Engine", ".", "get_turn_gauge_time"],
+    patchFunction: generateRenameFuncPatchFunc("TurnGauge.get_time"),
+  },
+  {
+    nameTokens: ["Engine", ".", "set_turn_gauge_time"],
+    patchFunction: generateRenameFuncPatchFunc("TurnGauge.set_time"),
+  },
+  {
+    nameTokens: ["Engine", ".", "get_turn_gauge_max_time"],
+    patchFunction: generateRenameFuncPatchFunc("TurnGauge.get_max_time"),
+  },
+  {
+    nameTokens: ["Engine", ".", "set_turn_gauge_max_time"],
+    patchFunction: generateRenameFuncPatchFunc("TurnGauge.set_max_time"),
+  },
+  {
+    nameTokens: ["Engine", ".", "reset_turn_gauge_to_default"],
+    patchFunction: generateRenameFuncPatchFunc("TurnGauge.reset_max_time"),
+  },
+  {
+    // remove `Battle.`
     patchFunction: (node) => {
       const name_node = node.children![0];
 
-      return [new Patch(name_node.start, name_node.end, "Engine.play_music")];
+      const first_node = name_node.children![0];
+      const second_node = name_node.children![1];
+
+      if (first_node?.content != "Battle" || second_node?.content != ".") {
+        return [];
+      }
+
+      return [new Patch(first_node.start, second_node.end, "")];
     },
   },
 ];
@@ -129,17 +168,17 @@ const function_patchers: FunctionPatcher[] = [
 export default async function (game_folder: string) {
   const mod_folder = game_folder + "/mods";
 
-  console.log("Moving mods/enemies/ to mods/battles/");
+  console.log("Moving mods/enemies/ to mods/encounters/");
 
   try {
-    await Deno.mkdir(mod_folder + "/battles/");
+    await Deno.mkdir(mod_folder + "/encounters/");
   } catch {
     // we don't care if this folder already exists.
   }
 
   for await (const entry of Deno.readDir(mod_folder + "/enemies")) {
     const source = mod_folder + "/enemies/" + entry.name;
-    const dest = mod_folder + "/battles/" + entry.name;
+    const dest = mod_folder + "/encounters/" + entry.name;
 
     try {
       await Deno.rename(source, dest);
@@ -150,6 +189,43 @@ export default async function (game_folder: string) {
 
   const files = await findFiles(mod_folder);
   const luaFiles = files.filter((path) => path.toLowerCase().endsWith(".lua"));
+  const tomlFiles = files.filter((path) =>
+    path.toLowerCase().endsWith("package.toml")
+  );
+
+  for (const path of tomlFiles) {
+    const toml = await Deno.readTextFile(path);
+
+    const tomlObject = TOML.parse(toml);
+    let modified = false;
+
+    // update category
+    if (tomlObject.category == "battle") {
+      tomlObject.category = "encounter";
+      modified = true;
+    }
+
+    // update dependencies
+    const dependencies = tomlObject.dependencies as
+      | { [key: string]: unknown }
+      | undefined;
+
+    if (
+      dependencies &&
+      typeof dependencies == "object" &&
+      dependencies.battles
+    ) {
+      dependencies.encounters = dependencies.battles;
+      delete dependencies.battles;
+      modified = true;
+    }
+
+    // save toml
+    if (modified) {
+      console.log('Patching "' + path + '"...');
+      await Deno.writeTextFile(path, TOML.stringify(tomlObject));
+    }
+  }
 
   for (const path of luaFiles) {
     const source = await Deno.readTextFile(path);
@@ -202,7 +278,10 @@ export default async function (game_folder: string) {
         const prefix_exp_tokens = collectTokens(node.children[0]);
 
         for (const patcher of function_patchers) {
-          if (!arraysEqual(prefix_exp_tokens, patcher.nameTokens)) {
+          if (
+            patcher.nameTokens &&
+            !arraysEqual(prefix_exp_tokens, patcher.nameTokens)
+          ) {
             continue;
           }
 
