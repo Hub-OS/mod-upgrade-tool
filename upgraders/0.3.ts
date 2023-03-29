@@ -81,6 +81,8 @@ const leafRewrites: { [key: string]: string } = {
   is_impact_blocked: "impact_blocked",
   add_attachment: "create_attachment",
   Stun: "Paralyze",
+  set_float_shoe: "ignore_negative_tile_effects",
+  set_air_shoe: "ignore_hole_tiles",
 };
 
 type MethodPatcher = {
