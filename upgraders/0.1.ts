@@ -19,6 +19,7 @@ const leafRewrites: { [key: string]: string } = {
   set_special_description: "set_description",
   package_build: "battle_init",
   charged_time_table_func: "calculate_charge_time_func",
+  card_create_action: "card_init",
 };
 
 type MethodPatcher = {
