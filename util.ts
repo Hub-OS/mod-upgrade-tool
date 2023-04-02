@@ -81,7 +81,6 @@ export function* astLeaves(node: ASTNode) {
       stack.unshift([child, 0]);
     } else {
       // found a leaf
-      console.log(child);
       yield child;
     }
   }
