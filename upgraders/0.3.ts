@@ -10,6 +10,7 @@ import {
   Patch,
   walkAst,
   TOML,
+  isAsyncIterableEmpty,
 } from "../util.ts";
 
 export const PREVIOUS_VERSION = "0.2";
@@ -215,7 +216,10 @@ export default async function (game_folder: string) {
   console.log("Moving mods/enemies/ to mods/encounters/");
 
   try {
-    await Deno.mkdir(mod_folder + "/encounters/");
+    await Promise.allSettled([
+      Deno.mkdir(mod_folder + "/encounters/"),
+      Deno.mkdir(mod_folder + "/enemies/"),
+    ]);
   } catch {
     // we don't care if this folder already exists.
   }
@@ -351,6 +355,19 @@ export default async function (game_folder: string) {
 
     if (patches.length > 0) {
       await Deno.writeTextFile(path, patched_source);
+    }
+  }
+
+  // see if the enemies folder is empty for deletion
+  const enemies_empty = await isAsyncIterableEmpty(
+    Deno.readDir(mod_folder + "/enemies")
+  );
+
+  if (enemies_empty) {
+    try {
+      await Deno.remove(mod_folder + "/enemies");
+    } catch {
+      // does not matter too much if the folder was not deleted
     }
   }
 }

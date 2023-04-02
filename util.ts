@@ -257,3 +257,11 @@ export async function createLuaEngine(): Promise<LuaEngine> {
 
   return lua;
 }
+
+export async function isAsyncIterableEmpty<T>(
+  async_iterable: AsyncIterable<T>
+): Promise<boolean> {
+  const result = async_iterable[Symbol.asyncIterator]();
+
+  return (await result.next()).done == true;
+}
