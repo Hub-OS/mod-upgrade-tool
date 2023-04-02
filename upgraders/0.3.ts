@@ -11,6 +11,7 @@ import {
   walkAst,
   TOML,
   isAsyncIterableEmpty,
+  astLeaves,
 } from "../util.ts";
 
 export const PREVIOUS_VERSION = "0.2";
@@ -197,9 +198,10 @@ const function_patchers: FunctionPatcher[] = [
     // remove `Battle.`
     patchFunction: (node) => {
       const name_node = node.children![0];
+      const name_leaves = [...astLeaves(name_node)];
 
-      const first_node = name_node.children![0];
-      const second_node = name_node.children![1];
+      const first_node = name_leaves[0];
+      const second_node = name_leaves[1];
 
       if (first_node?.content != "Battle" || second_node?.content != ".") {
         return [];

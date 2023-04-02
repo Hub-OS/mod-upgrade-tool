@@ -59,6 +59,34 @@ export function walkAst(
   }
 }
 
+export function* astLeaves(node: ASTNode) {
+  if (!node.children) {
+    return;
+  }
+
+  const stack: [ASTNode, number][] = [[node, 0]];
+
+  while (stack[0]) {
+    const [node, index] = stack[0];
+    const child = node.children![index];
+    stack[0][1] += 1;
+
+    if (!child) {
+      // completed node, remove and move on
+      stack.shift();
+      continue;
+    }
+
+    if (child.children) {
+      stack.unshift([child, 0]);
+    } else {
+      // found a leaf
+      console.log(child);
+      yield child;
+    }
+  }
+}
+
 export function collectTokens(node: ASTNode): string[] {
   const tokens: string[] = [];
 
