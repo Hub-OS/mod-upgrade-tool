@@ -194,9 +194,13 @@ const function_patchers: FunctionPatcher[] = [
     nameTokens: ["Engine", ".", "reset_turn_gauge_to_default"],
     patchFunction: generateRenameFuncPatchFunc("TurnGauge.reset_max_time"),
   },
+];
+
+// applies to `var` and `funcname`
+const name_patcher = [
   {
     // remove `Battle.`
-    patchFunction: (node) => {
+    patchFunction: (node: ASTNode) => {
       const name_node = node.children![0];
       const name_leaves = [...astLeaves(name_node)];
 
@@ -301,6 +305,21 @@ export default async function (game_folder: string) {
 
       if (!node.children) {
         // remaining patches are for branches
+        return;
+      }
+
+      if (node.type == "var" || node.type == "funcname") {
+        for (const patcher of name_patcher) {
+          const name_patches = patcher.patchFunction(node);
+
+          if (!name_patches) {
+            console.log(`Failed to apply a patch in "${path}"`);
+            continue;
+          }
+
+          patches.push(...name_patches);
+        }
+
         return;
       }
 
