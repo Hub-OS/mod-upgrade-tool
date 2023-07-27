@@ -347,6 +347,14 @@ export default async function (game_folder: string) {
       continue;
     }
 
+    // resolve _modpath replacement
+    const up_folder_count =
+      path.slice(new_mod_folder.length).split("/").length - 4;
+
+    const modpath_value = "../".repeat(Math.max(up_folder_count, 0));
+    const modpath_replacement = `"${modpath_value}"`;
+
+    // build patches
     const patches: Patch[] = [];
 
     walkAst(ast, (node) => {
@@ -355,6 +363,10 @@ export default async function (game_folder: string) {
       if (leafRewrite) {
         patches.push(new Patch(node.start, node.end, leafRewrite));
         return;
+      }
+
+      if (node.content == "_modpath") {
+        patches.push(new Patch(node.start, node.end, modpath_replacement));
       }
 
       if (!node.children) {
@@ -429,27 +441,6 @@ export default async function (game_folder: string) {
       patched_source = patch(source, patches);
     }
 
-    // fix _modpath
-    const contains_modpath = patched_source.includes("_modpath");
-
-    if (patched_source.includes("_modpath")) {
-      const up_folder_count =
-        path.slice(old_mod_folder.length).split("/").length - 3;
-
-      let modpath_replacement = '""';
-
-      if (up_folder_count > 0) {
-        const suffix = "../".repeat(Math.max(up_folder_count, 0));
-
-        modpath_replacement = `"${suffix}"`;
-      }
-
-      patched_source = patched_source.replaceAll(
-        "_modpath",
-        modpath_replacement
-      );
-    }
-
     if (has_v2_frame_data_patch) {
       patched_source = patched_source.replace(
         "local old_make_frame_data = make_frame_data",
@@ -514,7 +505,7 @@ end
     }
 
     // saving
-    if (patches.length > 0 || contains_modpath || has_v2_frame_data_patch) {
+    if (patches.length > 0 || has_v2_frame_data_patch) {
       await Deno.writeTextFile(path, patched_source);
     }
   }
