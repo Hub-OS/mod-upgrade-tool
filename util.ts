@@ -226,9 +226,26 @@ export function patch(source: string, patches: Patch[]): string {
   // remove patches that would be replaced by other patches through overlap
   patches = patches.filter(
     (patch, i) =>
-      !patches.some(
-        (p, j) => i != j && p.start <= patch.start && p.end >= patch.end
-      )
+      !patches.some((p, j) => {
+        // returning true for overlap
+
+        if (i == j) {
+          // ignore overlapping self
+          return false;
+        }
+
+        if (i > j && p.start == patch.start && p.end == patch.end) {
+          // bias same overlap
+          return true;
+        }
+
+        // p entirely contains patch, but is not identical
+        return (
+          p.start <= patch.start &&
+          p.end >= patch.end &&
+          !(p.start == patch.start && p.end == patch.end)
+        );
+      })
   );
 
   // sort the patches by start index, ascending
