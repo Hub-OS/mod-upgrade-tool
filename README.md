@@ -8,10 +8,26 @@ Upgraders only have access to `GAME_FOLDER/resources` and `./upgraders`, they ca
 
 ## Launching the upgrade tool
 
-Brackets `[]` marks the value as optional, by default it will attempt to run all upgraders over the `GAME_FOLDER`.
+- Windows: `upgrade.bat`
+- Linux/MacOS: `sh upgrade.sh`
 
-Windows: `upgrade.bat GAME_FOLDER [FROM_VERSION] [TO_VERSION]`
-Linux/MacOS: `sh upgrade.sh GAME_FOLDER [FROM_VERSION] [TO_VERSION]`
+With no arguments the help page will be printed:
+
+```
+Usage: upgrade.* PROJECT_ROOT START_VERSION END_VERSION
+Alternate Usage: upgrade.* [OPTIONS]
+
+This tool will overwrite files, make sure to back up your PROJECT_ROOT.
+
+Options:
+  -l, --versions-list   Lists known versions for use in START_VERSION and END_VERSION
+  -h, --help
+```
+
+Example: Upgrade mods stored in `../client/mods` from 0.1 -> 0.11
+
+- Windows: `upgrade.bat ../client 0.1 0.11`
+- Linux/MacOS: `sh upgrade.sh ../client 0.1 0.11`
 
 ## Making an upgrader
 
