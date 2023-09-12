@@ -59,6 +59,14 @@ const method_patchers: MethodPatcher[] = [
     nameToken: "find_nearest_players",
     patchFunction: patchFindHittableEntitiesMethod,
   },
+  {
+    nameToken: "get_augments",
+    patchFunction: function (node, _) {
+      const nameNode = getMethodNameNode(node)!;
+
+      return [new Patch(nameNode.start, nameNode.end, "augments")];
+    },
+  },
 ];
 
 export default async function (game_folder: string) {
