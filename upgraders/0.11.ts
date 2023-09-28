@@ -12,6 +12,13 @@ import {
 export const PREVIOUS_VERSION = "0.10";
 export const NEXT_VERSION = "0.11";
 
+const leafRewrites: { [key: string]: string } = {
+  make_animation_lockout: "ActionLockout.new_animation",
+  make_sequence_lockout: "ActionLockout.new_sequence",
+  make_async_lockout: "ActionLockout.new_async",
+  slide_when_moving: "set_slide_when_moving",
+};
+
 type MethodPatcher = {
   nameToken: string;
   patchFunction: (node: ASTNode, source: string) => Patch[] | undefined;
@@ -32,6 +39,16 @@ function patchFindHittableEntitiesMethod(node: ASTNode, _: string) {
       "--[[hittable patch--]])(entity) end--[[end hittable patch--]]"
     ),
   ];
+}
+
+function createFunctionRenamePatcher(
+  new_name: string
+): (node: ASTNode, source: string) => Patch[] {
+  return function (node, _) {
+    const nameNode = getMethodNameNode(node)!;
+
+    return [new Patch(nameNode.start, nameNode.end, new_name)];
+  };
 }
 
 const method_patchers: MethodPatcher[] = [
@@ -61,11 +78,7 @@ const method_patchers: MethodPatcher[] = [
   },
   {
     nameToken: "get_augments",
-    patchFunction: function (node, _) {
-      const nameNode = getMethodNameNode(node)!;
-
-      return [new Patch(nameNode.start, nameNode.end, "augments")];
-    },
+    patchFunction: createFunctionRenamePatcher("augments"),
   },
 ];
 
@@ -112,6 +125,13 @@ export default async function (game_folder: string) {
     const patches: Patch[] = [];
 
     walkAst(ast, (node) => {
+      const leafRewrite = node.content && leafRewrites[node.content];
+
+      if (leafRewrite) {
+        patches.push(new Patch(node.start, node.end, leafRewrite));
+        return;
+      }
+
       if (!node.children) {
         // remaining patches are for branches
         return;
