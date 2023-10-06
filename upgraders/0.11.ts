@@ -85,28 +85,6 @@ const method_patchers: MethodPatcher[] = [
 export default async function (game_folder: string) {
   const mod_folder = game_folder + "/mods";
 
-  console.log("Moving mods/enemies/ to mods/encounters/");
-
-  try {
-    await Promise.allSettled([
-      Deno.mkdir(mod_folder + "/encounters/"),
-      Deno.mkdir(mod_folder + "/enemies/"),
-    ]);
-  } catch {
-    // we don't care if this folder already exists.
-  }
-
-  for await (const entry of Deno.readDir(mod_folder + "/enemies")) {
-    const source = mod_folder + "/enemies/" + entry.name;
-    const dest = mod_folder + "/encounters/" + entry.name;
-
-    try {
-      await Deno.rename(source, dest);
-    } catch {
-      console.error(`%cFailed to move ${source} to ${dest}`, "color: red");
-    }
-  }
-
   const files = await findFiles(mod_folder);
   const luaFiles = files.filter((path) => path.toLowerCase().endsWith(".lua"));
 
