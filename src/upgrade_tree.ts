@@ -17,7 +17,6 @@ export class UpgradeTree {
     let next_paths = [];
 
     while (work_paths.length > 0) {
-      console.log(work_paths);
       for (const path of work_paths) {
         const latest = path[path.length - 1];
 

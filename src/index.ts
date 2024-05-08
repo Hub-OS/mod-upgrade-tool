@@ -59,7 +59,7 @@ async function main() {
 await main();
 
 function groupArgs() {
-  const processedArgs = [];
+  const processedArgs: string[][] = [];
   let expectedArgs = 0;
 
   for (let i = 0; i < Deno.args.length; i++) {
@@ -96,7 +96,7 @@ function printHelp() {
   );
   console.log("Options:");
 
-  const argsHelp = [];
+  const argsHelp: [string, string][] = [];
   let widestHelpLength = 0;
 
   for (const key in supportedArguments) {
