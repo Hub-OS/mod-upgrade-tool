@@ -25,6 +25,7 @@ export default async function (game_folder: string) {
     const source = await Deno.readTextFile(path);
 
     let patched_source = source
+      .replaceAll("Lifetime.Battle", "Lifetime.ActiveBattle")
       .replaceAll('"PLAYER_SHOOTING"', '"CHARACTER_SHOOT"')
       .replaceAll('"PLAYER_SWORD"', '"CHARACTER_SWING"')
       .replaceAll('"PLAYER_', '"CHARACTER_');
