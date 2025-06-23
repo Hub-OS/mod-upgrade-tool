@@ -32,7 +32,7 @@ function createFunctionRenamePatcher(
 
 const method_patchers: MethodPatcher[] = [
   {
-    nameToken: "get_augments",
+    nameToken: "highlight",
     patchFunction: createFunctionRenamePatcher("set_highlight"),
   },
 ];
